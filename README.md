@@ -49,7 +49,7 @@ Open http://localhost:3000 (viewer) and http://localhost:3000/admin (admin, ente
 
 - 3 teams, ~16 players each → 8 doubles pairs ("lines") per team, e.g. two lines per NTRP level (3.0 / 3.5 / 4.0 / 4.5)
 - Round-robin ties: A vs B, A vs C, B vs C → each line plays its counterpart → **24 matches**
-- Each match is a single games-based set (e.g. 8–5)
+- Each match is a single 6-game set (won 6-0…6-4, 7-5, or 7-6); the admin rejects any other score
 - Lines live in the `lines` table — relabel them in Supabase anytime without touching code
 
 ## Customizing
