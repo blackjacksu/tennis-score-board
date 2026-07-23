@@ -82,7 +82,7 @@ function Court({
   teamById: Map<number, Team>;
   lineById: Map<number, Line>;
 }) {
-  const { t, teamName } = useI18n();
+  const { t } = useI18n();
 
   const teamA = match ? teamById.get(match.team_a_id) : undefined;
   const teamB = match ? teamById.get(match.team_b_id) : undefined;
@@ -122,11 +122,11 @@ function Court({
         {/* Team-colored halves */}
         <div
           className="absolute inset-x-0 top-0 h-1/2"
-          style={{ backgroundColor: live ? tint(teamA?.color, 0.16) : tint(undefined, 0.05) }}
+          style={{ backgroundColor: live ? tint(teamA?.color, 0.26) : tint(undefined, 0.05) }}
         />
         <div
           className="absolute inset-x-0 bottom-0 h-1/2"
-          style={{ backgroundColor: live ? tint(teamB?.color, 0.16) : tint(undefined, 0.05) }}
+          style={{ backgroundColor: live ? tint(teamB?.color, 0.26) : tint(undefined, 0.05) }}
         />
 
         {/* Court markings + net */}
@@ -139,11 +139,22 @@ function Court({
           </span>
         </div>
 
+        {/* Bear mascots in a doubles one-up-one-back stance (behind text).
+            They stay black — the court half color tells you the team. */}
+        {live && (
+          <div className="pointer-events-none absolute inset-0" aria-hidden>
+            {/* Team A (top): one bear up at the net, partner back at the baseline */}
+            <BearFigure top="40%" left="30%" />
+            <BearFigure top="14%" left="64%" />
+            {/* Team B (bottom): mirror image on the far side of the net */}
+            <BearFigure top="60%" left="64%" />
+            <BearFigure top="86%" left="30%" />
+          </div>
+        )}
+
         {live ? (
           <div className="absolute inset-0 flex flex-col p-2.5">
             <HalfInfo
-              color={teamA?.color}
-              team={teamName(teamA)}
               pair={match!.pair_a ?? t("tbd")}
               rating={match!.rating_a ?? line?.ntrp ?? null}
               score={match!.score_a}
@@ -151,8 +162,6 @@ function Court({
               align="top"
             />
             <HalfInfo
-              color={teamB?.color}
-              team={teamName(teamB)}
               pair={match!.pair_b ?? t("tbd")}
               rating={match!.rating_b ?? line?.ntrp ?? null}
               score={match!.score_b}
@@ -172,45 +181,24 @@ function Court({
   );
 }
 
-// One team's side of the court: name chip, pair, rating and a big score by the net.
+// One team's side of the court: pair, rating and a big score by the net.
+// The court half is tinted in the team color, so no separate team badge here.
 function HalfInfo({
-  color,
-  team,
   pair,
   rating,
   score,
   ratingLabel,
   align,
 }: {
-  color: string | undefined;
-  team: string;
   pair: string;
   rating: number | string | null;
   score: number;
   ratingLabel: string;
   align: "top" | "bottom";
 }) {
-  const dot = (
-    <span
-      className="h-2.5 w-2.5 shrink-0 rounded-full ring-1 ring-black/10"
-      style={{ backgroundColor: color ?? "#94a3b8" }}
-    />
-  );
-  const nameChip = (
-    <span
-      className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-bold text-white shadow-sm"
-      style={{ backgroundColor: color ?? "#94a3b8" }}
-    >
-      {team}
-    </span>
-  );
   const body = (
     <>
-      <div className="flex items-center gap-1.5">
-        {dot}
-        {nameChip}
-      </div>
-      <p className="mt-1 text-xs font-semibold leading-tight text-slate-800">
+      <p className="text-xs font-semibold leading-tight text-slate-800">
         {pair}
       </p>
       {rating != null && (
@@ -241,6 +229,53 @@ function HalfInfo({
           {body}
         </>
       )}
+    </div>
+  );
+}
+
+// A cute Formosan black bear mascot (台灣黑熊) with its iconic white chest "V".
+// Positioned by percentage so it lands on the right spot on any court size.
+function BearFigure({ top, left }: { top: string; left: string }) {
+  const black = "#1c1917";
+  const tan = "#e8c7a6";
+  const cream = "#fdf4e3";
+  return (
+    <div
+      className="absolute -translate-x-1/2 -translate-y-1/2"
+      style={{ top, left, width: 26 }}
+    >
+      <svg viewBox="0 0 32 40" className="h-auto w-full drop-shadow-sm">
+        {/* ears */}
+        <circle cx="8" cy="7" r="4.5" fill={black} stroke="white" strokeWidth="1" />
+        <circle cx="24" cy="7" r="4.5" fill={black} stroke="white" strokeWidth="1" />
+        <circle cx="8" cy="7" r="2" fill={tan} />
+        <circle cx="24" cy="7" r="2" fill={tan} />
+        {/* body */}
+        <ellipse cx="16" cy="30" rx="8.5" ry="7.5" fill={black} stroke="white" strokeWidth="1" />
+        {/* paws */}
+        <circle cx="8.5" cy="31" r="2.6" fill={black} stroke="white" strokeWidth="0.8" />
+        <circle cx="23.5" cy="31" r="2.6" fill={black} stroke="white" strokeWidth="0.8" />
+        {/* iconic white chest crescent */}
+        <path
+          d="M11.5 25.5 L16 31 L20.5 25.5"
+          fill="none"
+          stroke={cream}
+          strokeWidth="2.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        {/* head */}
+        <circle cx="16" cy="14" r="9.5" fill={black} stroke="white" strokeWidth="1" />
+        {/* muzzle */}
+        <ellipse cx="16" cy="17" rx="4.6" ry="3.6" fill={tan} />
+        {/* nose */}
+        <ellipse cx="16" cy="15.4" rx="1.7" ry="1.2" fill={black} />
+        {/* eyes */}
+        <circle cx="11.7" cy="12" r="1.7" fill="white" />
+        <circle cx="20.3" cy="12" r="1.7" fill="white" />
+        <circle cx="12" cy="12.3" r="0.95" fill={black} />
+        <circle cx="20" cy="12.3" r="0.95" fill={black} />
+      </svg>
     </div>
   );
 }
