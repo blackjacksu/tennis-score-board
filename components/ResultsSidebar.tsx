@@ -1,25 +1,8 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n";
+import { tournamentOutcome } from "@/lib/standings";
 import type { Match, Team } from "@/lib/types";
-
-type Row = {
-  team: Team;
-  matchesWon: number;
-  gamesWon: number;
-};
-
-// Rank by matches won, then games won as the first tiebreaker.
-// If two teams are still level on BOTH, they play a one-point match to decide.
-function rank(rows: Row[]): Row[] {
-  return [...rows].sort(
-    (a, b) => b.matchesWon - a.matchesWon || b.gamesWon - a.gamesWon
-  );
-}
-
-function tiedWith(a: Row, b: Row): boolean {
-  return a.matchesWon === b.matchesWon && a.gamesWon === b.gamesWon;
-}
 
 export default function ResultsSidebar({
   teams,
@@ -30,34 +13,8 @@ export default function ResultsSidebar({
 }) {
   const { t, teamName } = useI18n();
 
-  const rows: Row[] = teams.map((team) => {
-    let matchesWon = 0;
-    let gamesWon = 0;
-    for (const m of matches) {
-      const isA = m.team_a_id === team.id;
-      const isB = m.team_b_id === team.id;
-      if (!isA && !isB) continue;
-      const own = isA ? m.score_a : m.score_b;
-      const opp = isA ? m.score_b : m.score_a;
-      if (m.status !== "scheduled") gamesWon += own;
-      if (m.status === "completed" && own > opp) matchesWon += 1;
-    }
-    return { team, matchesWon, gamesWon };
-  });
-
-  const ranked = rank(rows);
-  const total = matches.length;
-  const completed = matches.filter((m) => m.status === "completed").length;
-  const allDone = total > 0 && completed === total;
-
-  // Teams sharing the top spot on BOTH matches and games. Only call for a
-  // one-point match once every match is final — a tie mid-tournament is normal.
-  const leader = ranked[0];
-  const tiedLeaders = leader
-    ? ranked.filter((r) => tiedWith(r, leader))
-    : [];
-  const needsOnePoint = allDone && tiedLeaders.length > 1;
-  const champion = allDone && !needsOnePoint ? leader : null;
+  const { ranked, total, completed, allDone, tiedLeaders, needsOnePoint, champion } =
+    tournamentOutcome(teams, matches);
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">

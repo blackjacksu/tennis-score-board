@@ -143,7 +143,10 @@ function AdminMatchCard({
   }[match.status];
 
   // A finished match locks both controls; otherwise scores are capped to 0–7.
+  // While a save is in flight (pending) we also lock the card so a burst of
+  // clicks can't queue up a pile of concurrent requests.
   const locked = match.status === "completed";
+  const busy = pending;
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
@@ -164,8 +167,8 @@ function AdminMatchCard({
         score={scoreA}
         onMinus={() => bumpA(-1)}
         onPlus={() => bumpA(1)}
-        disableMinus={locked || scoreA <= 0}
-        disablePlus={locked || scoreA >= MAX_SET_GAMES}
+        disableMinus={locked || busy || scoreA <= 0}
+        disablePlus={locked || busy || scoreA >= MAX_SET_GAMES}
       />
       <div className="my-2 border-t border-slate-100" />
       <ScoreRow
@@ -175,13 +178,16 @@ function AdminMatchCard({
         score={scoreB}
         onMinus={() => bumpB(-1)}
         onPlus={() => bumpB(1)}
-        disableMinus={locked || scoreB <= 0}
-        disablePlus={locked || scoreB >= MAX_SET_GAMES}
+        disableMinus={locked || busy || scoreB <= 0}
+        disablePlus={locked || busy || scoreB >= MAX_SET_GAMES}
       />
 
       <div className="mt-3 flex gap-2">
         {match.status === "scheduled" && (
-          <ActionButton onClick={() => save(scoreA, scoreB, "in_progress")}>
+          <ActionButton
+            onClick={() => save(scoreA, scoreB, "in_progress")}
+            loading={busy}
+          >
             {t("startMatch")}
           </ActionButton>
         )}
@@ -189,12 +195,16 @@ function AdminMatchCard({
           <ActionButton
             onClick={() => save(scoreA, scoreB, "completed")}
             variant="primary"
+            loading={busy}
           >
             {t("markFinal")}
           </ActionButton>
         )}
         {match.status === "completed" && (
-          <ActionButton onClick={() => save(scoreA, scoreB, "in_progress")}>
+          <ActionButton
+            onClick={() => save(scoreA, scoreB, "in_progress")}
+            loading={busy}
+          >
             {t("reopen")}
           </ActionButton>
         )}
@@ -259,22 +269,39 @@ function ActionButton({
   children,
   onClick,
   variant = "default",
+  loading = false,
 }: {
   children: React.ReactNode;
   onClick: () => void;
   variant?: "default" | "primary";
+  loading?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex-1 rounded-lg py-2 text-sm font-semibold ${
+      disabled={loading}
+      aria-busy={loading}
+      className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold disabled:opacity-60 ${
         variant === "primary"
           ? "bg-emerald-600 text-white active:bg-emerald-700"
           : "border border-slate-300 text-slate-700 active:bg-slate-100"
       }`}
     >
+      {loading && <Spinner light={variant === "primary"} />}
       {children}
     </button>
+  );
+}
+
+function Spinner({ light = false }: { light?: boolean }) {
+  return (
+    <span
+      role="status"
+      aria-label="loading"
+      className={`h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-t-transparent ${
+        light ? "border-white/70" : "border-slate-400"
+      }`}
+    />
   );
 }
