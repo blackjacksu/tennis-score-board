@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getSupabase, isSupabaseConfigured } from "./supabase";
+import { getSupabase, isDemoMode, isSupabaseConfigured } from "./supabase";
+import { demoLines, demoMatches, demoTeams } from "./demoData";
 import type { Line, Match, Team } from "./types";
 
 export function useTournamentData() {
@@ -11,6 +12,13 @@ export function useTournamentData() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (isDemoMode) {
+      setTeams(demoTeams);
+      setLines(demoLines);
+      setMatches(demoMatches);
+      setLoading(false);
+      return;
+    }
     if (!isSupabaseConfigured) {
       setLoading(false);
       return;

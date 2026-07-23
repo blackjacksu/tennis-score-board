@@ -5,7 +5,7 @@ import { useEffect, useState, useTransition } from "react";
 import { updateScore } from "@/app/admin/actions";
 import Header from "@/components/Header";
 import { useI18n } from "@/lib/i18n";
-import { isSupabaseConfigured } from "@/lib/supabase";
+import { isDemoMode, isSupabaseConfigured } from "@/lib/supabase";
 import type { Line, Match, MatchStatus, Team } from "@/lib/types";
 import { useTournamentData } from "@/lib/useTournamentData";
 
@@ -27,9 +27,14 @@ export default function AdminBoard() {
         → {t("viewerBoard")}
       </Link>
 
-      {!isSupabaseConfigured && (
+      {!isSupabaseConfigured && !isDemoMode && (
         <p className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
           {t("notConfigured")}
+        </p>
+      )}
+      {isDemoMode && (
+        <p className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-center text-xs font-medium text-amber-700">
+          Demo mode — score changes here are local only and won&apos;t be saved
         </p>
       )}
       {isSupabaseConfigured && loading && (
@@ -102,6 +107,13 @@ function AdminMatchCard({
   }, [match.score_a, match.score_b, pending]);
 
   function save(nextA: number, nextB: number, status: MatchStatus) {
+    // In demo mode there's no real database; keep edits local so buttons still
+    // respond without erroring against the placeholder Supabase project.
+    if (isDemoMode) {
+      setScoreA(nextA);
+      setScoreB(nextB);
+      return;
+    }
     startTransition(async () => {
       const result = await updateScore(match.id, nextA, nextB, status);
       if (!result.ok) {

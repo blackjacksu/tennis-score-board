@@ -1,7 +1,7 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n";
-import { isSupabaseConfigured } from "@/lib/supabase";
+import { isDemoMode, isSupabaseConfigured } from "@/lib/supabase";
 import { useTournamentData } from "@/lib/useTournamentData";
 import MatchCard from "./MatchCard";
 import Standings from "./Standings";
@@ -10,7 +10,7 @@ export default function ScoreBoard() {
   const { t, teamName } = useI18n();
   const { teams, matches, teamById, lineById, loading } = useTournamentData();
 
-  if (!isSupabaseConfigured) {
+  if (!isSupabaseConfigured && !isDemoMode) {
     return (
       <p className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
         {t("notConfigured")}
@@ -30,6 +30,11 @@ export default function ScoreBoard() {
 
   return (
     <div className="space-y-6">
+      {isDemoMode && (
+        <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-center text-xs font-medium text-amber-700">
+          Demo data — set real Supabase keys in .env.local to go live
+        </p>
+      )}
       <Standings teams={teams} matches={matches} />
 
       {rounds.map((round) => {
