@@ -59,6 +59,14 @@ const pairsByTeam: Record<number, string[]> = {
   ],
 };
 
+// Combined pair NTRP (sum of both partners), parallel to pairsByTeam above.
+// Surfaced in the Court Map view next to each pair.
+const ratingsByTeam: Record<number, number[]> = {
+  1: [9.0, 7.5, 7.0, 6.5, 6.5, 5.5, 5.0],
+  2: [8.5, 8.0, 7.0, 6.5, 6.5, 6.0, 4.5],
+  3: [8.0, 8.0, 7.0, 7.0, 6.0, 6.0, 5.0],
+};
+
 type TieSpec = { round: number; teamA: number; teamB: number };
 
 // Round-robin: every team plays every other team once, across all 7 lines.
@@ -70,20 +78,38 @@ const ties: TieSpec[] = [
 
 const UPDATED = "2026-07-23T00:00:00.000Z";
 
-// All matches start scheduled at 0–0 — scores get reported live during the event.
+// Demo snapshot: Round 1 (Red vs Green) is underway with all six courts in use
+// (Lines 1–6 on Courts 1–6); Line 7 waits for a court. Later rounds stay
+// scheduled. Sample live scores keyed by line id so the Court Map has something
+// to show. Swap in real Supabase data to go live.
+const liveScores: Record<number, [number, number]> = {
+  1: [4, 2],
+  2: [5, 5],
+  3: [3, 6],
+  4: [6, 4],
+  5: [2, 3],
+  6: [7, 6],
+};
+
 export const demoMatches: Match[] = ties.flatMap((tie) =>
-  demoLines.map((line, i) => ({
-    id: tie.round * 100 + line.id,
-    line_id: line.id,
-    team_a_id: tie.teamA,
-    team_b_id: tie.teamB,
-    pair_a: pairsByTeam[tie.teamA][i],
-    pair_b: pairsByTeam[tie.teamB][i],
-    score_a: 0,
-    score_b: 0,
-    status: "scheduled",
-    court: null,
-    round: tie.round,
-    updated_at: UPDATED,
-  }) satisfies Match)
+  demoLines.map((line, i) => {
+    const onCourt = tie.round === 1 && line.sort_order <= 6;
+    const live = onCourt ? liveScores[line.id] : undefined;
+    return {
+      id: tie.round * 100 + line.id,
+      line_id: line.id,
+      team_a_id: tie.teamA,
+      team_b_id: tie.teamB,
+      pair_a: pairsByTeam[tie.teamA][i],
+      pair_b: pairsByTeam[tie.teamB][i],
+      rating_a: ratingsByTeam[tie.teamA][i],
+      rating_b: ratingsByTeam[tie.teamB][i],
+      score_a: live ? live[0] : 0,
+      score_b: live ? live[1] : 0,
+      status: onCourt ? "in_progress" : "scheduled",
+      court: onCourt ? String(line.sort_order) : null,
+      round: tie.round,
+      updated_at: UPDATED,
+    } satisfies Match;
+  })
 );

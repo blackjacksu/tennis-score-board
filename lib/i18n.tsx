@@ -49,6 +49,12 @@ const dictionaries = {
     tiebreakRule: "排名依據：勝場 › 局數 › 一分決勝",
     matchesFinal: "{n}/{total} 場完賽",
     live: "進行中",
+    courtMap: "場地圖",
+    nowPlaying: "現正比賽",
+    courtOpen: "空場",
+    rating: "分級",
+    spectators: "觀眾席",
+    courtsInUse: "{n}/6 場地使用中",
   },
   en: {
     appTitle: "TAA Tennis Team Tournament",
@@ -90,6 +96,12 @@ const dictionaries = {
     tiebreakRule: "Ranking: matches › games › one-point match",
     matchesFinal: "{n}/{total} matches final",
     live: "Live",
+    courtMap: "Court Map",
+    nowPlaying: "Now Playing",
+    courtOpen: "Open",
+    rating: "NTRP",
+    spectators: "Spectators",
+    courtsInUse: "{n}/6 courts in use",
   },
 } as const;
 
