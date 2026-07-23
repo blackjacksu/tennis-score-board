@@ -12,6 +12,9 @@
 .DS_Store
 *.pem
 
+# generated documents (run `npm run gen:signin`)
+/signin-sheet.pdf
+
 # debug
 npm-debug.log*
 
