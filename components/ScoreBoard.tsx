@@ -6,12 +6,14 @@ import { isDemoMode, isSupabaseConfigured } from "@/lib/supabase";
 import { useTournamentData } from "@/lib/useTournamentData";
 import CourtView from "./CourtView";
 import ScoresView from "./ScoresView";
+import TeamsView from "./TeamsView";
 
-type View = "scores" | "courts";
+type View = "scores" | "courts" | "roster";
 
 export default function ScoreBoard() {
   const { t } = useI18n();
-  const { teams, matches, teamById, lineById, loading } = useTournamentData();
+  const { teams, matches, roster, teamById, lineById, loading } =
+    useTournamentData();
   const [view, setView] = useState<View>("scores");
 
   if (!isSupabaseConfigured && !isDemoMode) {
@@ -39,17 +41,27 @@ export default function ScoreBoard() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <ViewSwitcher view={view} onChange={setView} />
         <div className="min-w-0 flex-1">
-          {view === "scores" ? (
+          {view === "scores" && (
             <ScoresView
               teams={teams}
               matches={matches}
               teamById={teamById}
               lineById={lineById}
             />
-          ) : (
+          )}
+          {view === "courts" && (
             <CourtView
               teams={teams}
               matches={matches}
+              teamById={teamById}
+              lineById={lineById}
+            />
+          )}
+          {view === "roster" && (
+            <TeamsView
+              teams={teams}
+              matches={matches}
+              roster={roster}
               teamById={teamById}
               lineById={lineById}
             />
@@ -72,6 +84,7 @@ function ViewSwitcher({
   const items: { key: View; label: string; icon: string }[] = [
     { key: "scores", label: t("liveScores"), icon: "📋" },
     { key: "courts", label: t("courtMap"), icon: "🎾" },
+    { key: "roster", label: t("roster"), icon: "👥" },
   ];
 
   return (

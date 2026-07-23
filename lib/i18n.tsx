@@ -55,6 +55,10 @@ const dictionaries = {
     rating: "分級",
     spectators: "觀眾席",
     courtsInUse: "{n}/6 場地使用中",
+    roster: "隊伍名單",
+    captain: "隊長",
+    teamNtrp: "隊伍總分",
+    playerCount: "{n} 位選手",
   },
   en: {
     appTitle: "TAA Tennis Team Tournament",
@@ -102,6 +106,10 @@ const dictionaries = {
     rating: "NTRP",
     spectators: "Spectators",
     courtsInUse: "{n}/6 courts in use",
+    roster: "Teams",
+    captain: "Captain",
+    teamNtrp: "Team NTRP",
+    playerCount: "{n} players",
   },
 } as const;
 

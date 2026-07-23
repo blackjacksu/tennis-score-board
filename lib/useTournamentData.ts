@@ -2,13 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getSupabase, isDemoMode, isSupabaseConfigured } from "./supabase";
-import { demoLines, demoMatches, demoTeams } from "./demoData";
-import type { Line, Match, Team } from "./types";
+import { demoLines, demoMatches, demoRoster, demoTeams } from "./demoData";
+import type { Line, Match, Team, TeamRoster } from "./types";
 
 export function useTournamentData() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [lines, setLines] = useState<Line[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
+  // Individual ratings + captains aren't in Supabase yet, so the roster is only
+  // populated in demo mode; the Teams view falls back to match pairs otherwise.
+  const [roster, setRoster] = useState<TeamRoster[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -16,6 +19,7 @@ export function useTournamentData() {
       setTeams(demoTeams);
       setLines(demoLines);
       setMatches(demoMatches);
+      setRoster(demoRoster);
       setLoading(false);
       return;
     }
@@ -79,5 +83,5 @@ export function useTournamentData() {
     [lines]
   );
 
-  return { teams, lines, matches, teamById, lineById, loading };
+  return { teams, lines, matches, roster, teamById, lineById, loading };
 }

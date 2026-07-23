@@ -14,6 +14,25 @@ export type Line = {
 
 export type MatchStatus = "scheduled" | "in_progress" | "completed";
 
+// Team roster, used by the Teams view. Individual ratings + captain aren't in
+// the Supabase schema yet, so this is populated from demo data for now.
+export type RosterPlayer = {
+  name: string;
+  ntrp: number;
+};
+
+export type RosterPair = {
+  lineLabel: string;
+  players: [RosterPlayer, RosterPlayer];
+  combined: number;
+};
+
+export type TeamRoster = {
+  teamId: number;
+  captainName: string;
+  pairs: RosterPair[];
+};
+
 export type Match = {
   id: number;
   line_id: number;

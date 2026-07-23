@@ -8,7 +8,7 @@
 //   Alternates (1 per team, swappable into any line):
 //     Red: Margot Lai (1.5) · Green: Grace Shih (1.5) · Yellow: 李佩安 (2.0)
 //   Excluded: Jady Tsao & Dylon Lo (dropped out), 吳杏玫 (no NTRP), 鄧之彬 (husband plays).
-import type { Line, Match, Team } from "./types";
+import type { Line, Match, Team, TeamRoster } from "./types";
 
 export const demoTeams: Team[] = [
   { id: 1, name: "Red", name_zh: "紅隊", color: "#ef4444" },
@@ -28,44 +28,80 @@ export const demoLines: Line[] = [
   { id: 7, label: "Line 7", ntrp: "4.5–5.0", sort_order: 7 },
 ];
 
-// One doubles pair per team per line (index 0 = Line 1 ... index 6 = Line 7).
-const pairsByTeam: Record<number, string[]> = {
-  1: [
-    "Andrew Liao / Fred Lin",       // 4.5 + 4.5 = 9.0
-    "Ronald Feng / Mu-Ting Chien",  // 4.0 + 3.5 = 7.5
-    "Theo Pai / Christine Lin",     // 3.5 + 3.5 = 7.0
-    "Wendy Wang / 楊之安",           // 3.0 + 3.5 = 6.5
-    "Derrick Chueh / Tim Chen",     // 3.5 + 3.0 = 6.5
-    "Andy Lu / Zane Shao",          // 3.0 + 2.5 = 5.5
-    "Andy Chen / Avery Hsieh",      // 2.5 + 2.5 = 5.0
-  ],
-  2: [
-    "Richard Lin / Willy Su",       // 4.5 + 4.0 = 8.5
-    "Hung-Ying Lin / Vincent Tseng",// 4.0 + 4.0 = 8.0
-    "Nate Raughley / Ramon Mangaser",// 3.5 + 3.5 = 7.0
-    "Shih-Yen Pan / Janice Chen",   // 3.5 + 3.0 = 6.5
-    "Ben Chen / Tony Peng",         // 3.5 + 3.0 = 6.5
-    "Faye Chang / David Fang",      // 3.0 + 3.0 = 6.0
-    "Julie Hsieh / Jerry Chiu",     // 2.5 + 2.0 = 4.5
-  ],
-  3: [
-    "Ching-Yen Shih / Yu Cheng",    // 4.0 + 4.0 = 8.0
-    "Kevin Chiang / Yi-Chih Wang",  // 4.0 + 4.0 = 8.0
-    "Peichun Su / Alice Liu",       // 3.5 + 3.5 = 7.0
-    "Thomas Yan / Andy Y.",         // 3.5 + 3.5 = 7.0
-    "Chris Lin / Joshua Lee",       // 3.0 + 3.0 = 6.0
-    "Daniel Tiedemann / Chih-Yu Lee",// 3.0 + 3.0 = 6.0
-    "Martin Hsieh / Cody",          // 2.5 + 2.5 = 5.0
-  ],
+// Source of truth for who's on each team. Each team fields one doubles pair per
+// line (index 0 = Line 1 ... index 6 = Line 7), with each partner's individual
+// NTRP. The Teams view reads this directly; pairsByTeam / ratingsByTeam below
+// are derived from it so nothing drifts out of sync.
+type RawPlayer = { name: string; ntrp: number };
+const rawRoster: Record<
+  number,
+  { captain: string; pairs: [RawPlayer, RawPlayer][] }
+> = {
+  1: {
+    captain: "Andrew Liao",
+    pairs: [
+      [{ name: "Andrew Liao", ntrp: 4.5 }, { name: "Fred Lin", ntrp: 4.5 }],
+      [{ name: "Ronald Feng", ntrp: 4.0 }, { name: "Mu-Ting Chien", ntrp: 3.5 }],
+      [{ name: "Theo Pai", ntrp: 3.5 }, { name: "Christine Lin", ntrp: 3.5 }],
+      [{ name: "Wendy Wang", ntrp: 3.0 }, { name: "楊之安", ntrp: 3.5 }],
+      [{ name: "Derrick Chueh", ntrp: 3.5 }, { name: "Tim Chen", ntrp: 3.0 }],
+      [{ name: "Andy Lu", ntrp: 3.0 }, { name: "Zane Shao", ntrp: 2.5 }],
+      [{ name: "Andy Chen", ntrp: 2.5 }, { name: "Avery Hsieh", ntrp: 2.5 }],
+    ],
+  },
+  2: {
+    captain: "Richard Lin",
+    pairs: [
+      [{ name: "Richard Lin", ntrp: 4.5 }, { name: "Willy Su", ntrp: 4.0 }],
+      [{ name: "Hung-Ying Lin", ntrp: 4.0 }, { name: "Vincent Tseng", ntrp: 4.0 }],
+      [{ name: "Nate Raughley", ntrp: 3.5 }, { name: "Ramon Mangaser", ntrp: 3.5 }],
+      [{ name: "Shih-Yen Pan", ntrp: 3.5 }, { name: "Janice Chen", ntrp: 3.0 }],
+      [{ name: "Ben Chen", ntrp: 3.5 }, { name: "Tony Peng", ntrp: 3.0 }],
+      [{ name: "Faye Chang", ntrp: 3.0 }, { name: "David Fang", ntrp: 3.0 }],
+      [{ name: "Julie Hsieh", ntrp: 2.5 }, { name: "Jerry Chiu", ntrp: 2.0 }],
+    ],
+  },
+  3: {
+    captain: "Ching-Yen Shih",
+    pairs: [
+      [{ name: "Ching-Yen Shih", ntrp: 4.0 }, { name: "Yu Cheng", ntrp: 4.0 }],
+      [{ name: "Kevin Chiang", ntrp: 4.0 }, { name: "Yi-Chih Wang", ntrp: 4.0 }],
+      [{ name: "Peichun Su", ntrp: 3.5 }, { name: "Alice Liu", ntrp: 3.5 }],
+      [{ name: "Thomas Yan", ntrp: 3.5 }, { name: "Andy Y.", ntrp: 3.5 }],
+      [{ name: "Chris Lin", ntrp: 3.0 }, { name: "Joshua Lee", ntrp: 3.0 }],
+      [{ name: "Daniel Tiedemann", ntrp: 3.0 }, { name: "Chih-Yu Lee", ntrp: 3.0 }],
+      [{ name: "Martin Hsieh", ntrp: 2.5 }, { name: "Cody", ntrp: 2.5 }],
+    ],
+  },
 };
 
-// Combined pair NTRP (sum of both partners), parallel to pairsByTeam above.
-// Surfaced in the Court Map view next to each pair.
-const ratingsByTeam: Record<number, number[]> = {
-  1: [9.0, 7.5, 7.0, 6.5, 6.5, 5.5, 5.0],
-  2: [8.5, 8.0, 7.0, 6.5, 6.5, 6.0, 4.5],
-  3: [8.0, 8.0, 7.0, 7.0, 6.0, 6.0, 5.0],
-};
+// Structured roster the Teams view consumes: captain + each doubles pair with
+// both partners, their individual ratings, and the combined total.
+export const demoRoster: TeamRoster[] = demoTeams.map((team) => {
+  const raw = rawRoster[team.id];
+  return {
+    teamId: team.id,
+    captainName: raw.captain,
+    pairs: raw.pairs.map(([p1, p2], i) => ({
+      lineLabel: demoLines[i].label,
+      players: [p1, p2] as [RawPlayer, RawPlayer],
+      combined: p1.ntrp + p2.ntrp,
+    })),
+  };
+});
+
+// Pair label ("Name / Name") per team per line — derived from the roster.
+const pairsByTeam: Record<number, string[]> = Object.fromEntries(
+  demoRoster.map((r) => [
+    r.teamId,
+    r.pairs.map((p) => `${p.players[0].name} / ${p.players[1].name}`),
+  ])
+);
+
+// Combined pair NTRP per team per line — derived from the roster.
+const ratingsByTeam: Record<number, number[]> = Object.fromEntries(
+  demoRoster.map((r) => [r.teamId, r.pairs.map((p) => p.combined)])
+);
 
 type TieSpec = { round: number; teamA: number; teamB: number };
 
