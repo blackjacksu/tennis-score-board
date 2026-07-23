@@ -4,7 +4,7 @@ import { useI18n } from "@/lib/i18n";
 import { isDemoMode, isSupabaseConfigured } from "@/lib/supabase";
 import { useTournamentData } from "@/lib/useTournamentData";
 import MatchCard from "./MatchCard";
-import Standings from "./Standings";
+import ResultsSidebar from "./ResultsSidebar";
 
 export default function ScoreBoard() {
   const { t, teamName } = useI18n();
@@ -29,15 +29,18 @@ export default function ScoreBoard() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {isDemoMode && (
         <p className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-center text-xs font-medium text-amber-700">
           Demo data — set real Supabase keys in .env.local to go live
         </p>
       )}
-      <Standings teams={teams} matches={matches} />
-
-      {rounds.map((round) => {
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        <aside className="lg:order-last lg:w-72 lg:shrink-0 lg:sticky lg:top-4">
+          <ResultsSidebar teams={teams} matches={matches} />
+        </aside>
+        <div className="min-w-0 flex-1 space-y-6">
+          {rounds.map((round) => {
         const roundMatches = matches
           .filter((m) => m.round === round)
           .sort(
@@ -60,7 +63,7 @@ export default function ScoreBoard() {
               </span>
               <span className="text-base font-bold">{tieLabel}</span>
             </h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
               {roundMatches.map((m) => (
                 <MatchCard
                   key={m.id}
@@ -72,8 +75,10 @@ export default function ScoreBoard() {
               ))}
             </div>
           </section>
-        );
-      })}
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
