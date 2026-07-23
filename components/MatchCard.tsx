@@ -1,0 +1,111 @@
+"use client";
+
+import { useI18n } from "@/lib/i18n";
+import type { Line, Match, Team } from "@/lib/types";
+
+const statusStyles: Record<Match["status"], string> = {
+  scheduled: "bg-slate-100 text-slate-500",
+  in_progress: "bg-red-100 text-red-600",
+  completed: "bg-emerald-100 text-emerald-700",
+};
+
+export default function MatchCard({
+  match,
+  teamA,
+  teamB,
+  line,
+}: {
+  match: Match;
+  teamA: Team | undefined;
+  teamB: Team | undefined;
+  line: Line | undefined;
+}) {
+  const { t, teamName } = useI18n();
+
+  const statusLabel = {
+    scheduled: t("scheduled"),
+    in_progress: t("inProgress"),
+    completed: t("completed"),
+  }[match.status];
+
+  const started = match.status !== "scheduled";
+  const aWon = match.status === "completed" && match.score_a > match.score_b;
+  const bWon = match.status === "completed" && match.score_b > match.score_a;
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+      <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
+        <span className="font-semibold">{line?.label ?? "—"}</span>
+        <span className="flex items-center gap-2">
+          {match.court && (
+            <span>
+              {t("court")} {match.court}
+            </span>
+          )}
+          <span
+            className={`rounded-full px-2 py-0.5 font-medium ${statusStyles[match.status]}`}
+          >
+            {match.status === "in_progress" && (
+              <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-red-500 align-middle" />
+            )}
+            {statusLabel}
+          </span>
+        </span>
+      </div>
+
+      <Row
+        color={teamA?.color}
+        team={teamName(teamA)}
+        pair={match.pair_a ?? t("tbd")}
+        score={started ? match.score_a : null}
+        winner={aWon}
+      />
+      <div className="my-1.5 border-t border-slate-100" />
+      <Row
+        color={teamB?.color}
+        team={teamName(teamB)}
+        pair={match.pair_b ?? t("tbd")}
+        score={started ? match.score_b : null}
+        winner={bWon}
+      />
+    </div>
+  );
+}
+
+function Row({
+  color,
+  team,
+  pair,
+  score,
+  winner,
+}: {
+  color: string | undefined;
+  team: string;
+  pair: string;
+  score: number | null;
+  winner: boolean;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className="h-3 w-3 shrink-0 rounded-full"
+        style={{ backgroundColor: color ?? "#94a3b8" }}
+      />
+      <div className="min-w-0 flex-1">
+        <div
+          className={`truncate text-sm ${winner ? "font-bold" : "font-medium"}`}
+        >
+          {pair}
+        </div>
+        <div className="truncate text-xs text-slate-400">{team}</div>
+      </div>
+      <div
+        className={`w-8 text-right text-2xl tabular-nums ${
+          winner ? "font-bold text-slate-900" : "font-semibold text-slate-600"
+        }`}
+      >
+        {score ?? "–"}
+      </div>
+    </div>
+  );
+}
