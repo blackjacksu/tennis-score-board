@@ -6,6 +6,7 @@ import { updateScore } from "@/app/admin/actions";
 import Header from "@/components/Header";
 import { useI18n } from "@/lib/i18n";
 import { isDemoMode, isSupabaseConfigured } from "@/lib/supabase";
+import { MAX_SET_GAMES } from "@/lib/setScore";
 import type { Line, Match, MatchStatus, Team } from "@/lib/types";
 import { useTournamentData } from "@/lib/useTournamentData";
 
@@ -123,12 +124,14 @@ function AdminMatchCard({
   }
 
   function bumpA(delta: number) {
-    const next = Math.max(0, scoreA + delta);
+    const next = Math.min(MAX_SET_GAMES, Math.max(0, scoreA + delta));
+    if (next === scoreA) return; // already at the 0–7 bound, nothing to save
     setScoreA(next);
     save(next, scoreB, match.status === "scheduled" ? "in_progress" : match.status);
   }
   function bumpB(delta: number) {
-    const next = Math.max(0, scoreB + delta);
+    const next = Math.min(MAX_SET_GAMES, Math.max(0, scoreB + delta));
+    if (next === scoreB) return; // already at the 0–7 bound, nothing to save
     setScoreB(next);
     save(scoreA, next, match.status === "scheduled" ? "in_progress" : match.status);
   }
@@ -138,6 +141,9 @@ function AdminMatchCard({
     in_progress: t("inProgress"),
     completed: t("completed"),
   }[match.status];
+
+  // A finished match locks both controls; otherwise scores are capped to 0–7.
+  const locked = match.status === "completed";
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
@@ -158,7 +164,8 @@ function AdminMatchCard({
         score={scoreA}
         onMinus={() => bumpA(-1)}
         onPlus={() => bumpA(1)}
-        disabled={match.status === "completed"}
+        disableMinus={locked || scoreA <= 0}
+        disablePlus={locked || scoreA >= MAX_SET_GAMES}
       />
       <div className="my-2 border-t border-slate-100" />
       <ScoreRow
@@ -168,7 +175,8 @@ function AdminMatchCard({
         score={scoreB}
         onMinus={() => bumpB(-1)}
         onPlus={() => bumpB(1)}
-        disabled={match.status === "completed"}
+        disableMinus={locked || scoreB <= 0}
+        disablePlus={locked || scoreB >= MAX_SET_GAMES}
       />
 
       <div className="mt-3 flex gap-2">
@@ -202,7 +210,8 @@ function ScoreRow({
   score,
   onMinus,
   onPlus,
-  disabled,
+  disableMinus,
+  disablePlus,
 }: {
   color: string | undefined;
   label: string;
@@ -210,7 +219,8 @@ function ScoreRow({
   score: number;
   onMinus: () => void;
   onPlus: () => void;
-  disabled: boolean;
+  disableMinus: boolean;
+  disablePlus: boolean;
 }) {
   return (
     <div className="flex items-center gap-2">
@@ -225,7 +235,7 @@ function ScoreRow({
       <button
         type="button"
         onClick={onMinus}
-        disabled={disabled}
+        disabled={disableMinus}
         className="h-10 w-10 rounded-lg border border-slate-300 text-xl font-bold text-slate-600 active:bg-slate-100 disabled:opacity-30"
       >
         −
@@ -236,7 +246,7 @@ function ScoreRow({
       <button
         type="button"
         onClick={onPlus}
-        disabled={disabled}
+        disabled={disablePlus}
         className="h-10 w-10 rounded-lg border border-slate-300 text-xl font-bold text-slate-600 active:bg-slate-100 disabled:opacity-30"
       >
         +
