@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "gen:signin": "node scripts/gen-signin.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.0",
@@ -17,10 +18,12 @@
     "react-dom": "^19.1.0"
   },
   "devDependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
     "@tailwindcss/postcss": "^4.1.8",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "pdf-lib": "^1.17.1",
     "tailwindcss": "^4.1.8",
     "typescript": "^5",
     "vitest": "^4.1.10"
