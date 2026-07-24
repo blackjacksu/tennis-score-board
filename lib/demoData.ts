@@ -2,15 +2,16 @@
 // Lets you preview the scoreboard layout with no database.
 //
 // 2026 TAA Tennis Event roster (from the registration sheet):
-//   49 sign-ups − 2 dropouts (Jady Tsao, Dylon Lo) = 47 players.
+//   49 sign-ups − 2 dropouts (Jady Tsao, Dylon Lo) = 47 registered players,
+//   plus Kosho Horage, who hasn't registered yet but is playing Red's Line 3 with
+//   Mu-Ting Chien => 48 players, one per slot with nobody doubling up.
 //   3 teams (Red / Green / Yellow) × 8 lines = 24 doubles pairs,
 //   round-robin ties (Red-Green, Red-Yellow, Green-Yellow) => 24 matches.
 //   Team combined-NTRP totals: Red 52.5 · Green 50.0 · Yellow 54.0. NOT balanced
 //   — the requested transfers between Green and Yellow left Yellow 4 points
 //   stronger than Green, so their line-vs-line matchups are uneven.
-//   24 pairs need 48 slots but there are 47 players, so ONE player doubles up:
-//   Willy Su (蘇亭瑋) plays Red's Line 1 AND Line 3 (≈4 matches instead of 2).
-//   吳杏玫 seeded at NTRP 2.5 (no rating on the form); 鄧之彬 at 4.0 as registered.
+//   吳杏玫 seeded at NTRP 2.5 and Kosho Horage at 4.0 (neither has a rating on the
+//   form); 鄧之彬 at 4.0 as registered.
 import type { Line, Match, Team, TeamRoster } from "./types";
 
 export const demoTeams: Team[] = [
@@ -36,7 +37,6 @@ export const demoLines: Line[] = [
 // line (index 0 = Line 1 ... index 7 = Line 8), with each partner's individual
 // NTRP. The Teams view reads this directly; pairsByTeam / ratingsByTeam below
 // are derived from it so nothing drifts out of sync.
-// Willy Su appears on Red at Line 1 and Line 3 — the double-duty slot.
 type RawPlayer = { name: string; ntrp: number };
 const rawRoster: Record<
   number,
@@ -47,7 +47,7 @@ const rawRoster: Record<
     pairs: [
       [{ name: "Richard Lin", ntrp: 4.5 }, { name: "Willy Su", ntrp: 4.0 }],
       [{ name: "Kevin Chiang", ntrp: 4.0 }, { name: "Yi-Chih Wang", ntrp: 4.0 }],
-      [{ name: "Willy Su", ntrp: 4.0 }, { name: "Mu-Ting Chien", ntrp: 3.5 }],
+      [{ name: "Mu-Ting Chien", ntrp: 3.5 }, { name: "Kosho Horage", ntrp: 4.0 }],
       [{ name: "Wendy Wang", ntrp: 3.0 }, { name: "楊之安", ntrp: 3.5 }],
       [{ name: "Derrick Chueh", ntrp: 3.5 }, { name: "Tim Chen", ntrp: 3.0 }],
       [{ name: "Chris Lin", ntrp: 3.0 }, { name: "Joshua Lee", ntrp: 3.0 }],
@@ -61,10 +61,10 @@ const rawRoster: Record<
       [{ name: "Andrew Liao", ntrp: 4.5 }, { name: "Fred Lin", ntrp: 4.5 }],
       [{ name: "鄧之彬", ntrp: 4.0 }, { name: "Ronald Feng", ntrp: 4.0 }],
       [{ name: "Peichun Su", ntrp: 3.5 }, { name: "Thomas Yan", ntrp: 3.5 }],
-      [{ name: "Ben Chen", ntrp: 3.5 }, { name: "Janice Chen", ntrp: 3.0 }],
+      [{ name: "Ben Chen", ntrp: 3.5 }, { name: "Tony Peng", ntrp: 3.0 }],
       [{ name: "Daniel Tiedemann", ntrp: 3.0 }, { name: "Chih-Yu Lee", ntrp: 3.0 }],
-      [{ name: "Andy Lu", ntrp: 3.0 }, { name: "Martin Hsieh", ntrp: 2.5 }],
-      [{ name: "Zane Shao", ntrp: 2.5 }, { name: "Cody", ntrp: 2.5 }],
+      [{ name: "Andy Lu", ntrp: 3.0 }, { name: "Zane Shao", ntrp: 2.5 }],
+      [{ name: "Martin Hsieh", ntrp: 2.5 }, { name: "Cody", ntrp: 2.5 }],
       [{ name: "Margot Lai", ntrp: 1.5 }, { name: "Grace Shih", ntrp: 1.5 }],
     ],
   },
@@ -76,7 +76,7 @@ const rawRoster: Record<
       [{ name: "Theo Pai", ntrp: 3.5 }, { name: "Christine Lin", ntrp: 3.5 }],
       [{ name: "Nate Raughley", ntrp: 3.5 }, { name: "Ramon Mangaser", ntrp: 3.5 }],
       [{ name: "Alice Liu", ntrp: 3.5 }, { name: "Andy Y.", ntrp: 3.5 }],
-      [{ name: "Shih-Yen Pan", ntrp: 3.5 }, { name: "Tony Peng", ntrp: 3.0 }],
+      [{ name: "Shih-Yen Pan", ntrp: 3.5 }, { name: "Janice Chen", ntrp: 3.0 }],
       [{ name: "Faye Chang", ntrp: 3.0 }, { name: "David Fang", ntrp: 3.0 }],
       [{ name: "吳杏玫", ntrp: 2.5 }, { name: "李佩安", ntrp: 2.0 }],
     ],

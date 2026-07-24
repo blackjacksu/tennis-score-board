@@ -1,7 +1,8 @@
 // Generates an 18×24in portrait wall poster showing the tournament's team
 // format (every line, both players, NTRP) and the full round-robin match
-// schedule. Reads straight from lib/demoData.ts (single source of truth) —
-// regenerate after any roster change with `npm run gen:poster`.
+// schedule with each match's start time and court. Reads straight from
+// lib/demoData.ts and lib/schedule.ts (single sources of truth) — regenerate
+// after any roster change with `npm run gen:poster`.
 //
 // Layout: the three teams sit side by side across the top so they can be
 // compared at a glance, then each round's tie gets a full-width table stacked
@@ -14,6 +15,7 @@ import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { demoRoster, demoTeams, demoLines, demoMatches } from "../../lib/demoData.ts";
+import { buildTimetable, formatClock } from "../../lib/schedule.ts";
 import { createDoc, hex, readableText, pageDrawer } from "./pdfKit.mjs";
 import { EVENT_NAME, EVENT_DATE } from "./config.mjs";
 
@@ -47,6 +49,15 @@ for (const m of demoMatches) {
   roundsMap.get(m.round).matches.push(m);
 }
 const rounds = [...roundsMap.values()].sort((a, b) => a.round - b.round);
+
+// Start time per match, from the same timetable the live-score page renders, so
+// the poster and the board can never disagree. Note the times are not monotonic
+// down a round's Line 1..8 rows: the weakest lines go on court first, so Lines
+// 8..3 share the earlier block and Lines 2..1 the later one.
+const startByMatch = new Map();
+for (const slot of buildTimetable(demoMatches, lineById)) {
+  for (const m of slot.matches) startByMatch.set(m.id, slot.startMinutes);
+}
 for (const r of rounds) {
   r.matches.sort(
     (a, b) => (lineById.get(a.line_id)?.sort_order ?? 0) - (lineById.get(b.line_id)?.sort_order ?? 0)
@@ -157,11 +168,12 @@ const sRowH = 30;
 const ROUND_GAP = 26;
 
 const COL = {
-  line: { x: 0, w: CONTENT_W * 0.07 },
-  pairA: { x: CONTENT_W * 0.07, w: CONTENT_W * 0.38 },
-  vs: { x: CONTENT_W * 0.45, w: CONTENT_W * 0.035 },
-  pairB: { x: CONTENT_W * 0.485, w: CONTENT_W * 0.38 },
-  court: { x: CONTENT_W * 0.885, w: CONTENT_W * 0.115 },
+  line: { x: 0, w: CONTENT_W * 0.06 },
+  pairA: { x: CONTENT_W * 0.06, w: CONTENT_W * 0.345 },
+  vs: { x: CONTENT_W * 0.405, w: CONTENT_W * 0.03 },
+  pairB: { x: CONTENT_W * 0.435, w: CONTENT_W * 0.345 },
+  time: { x: CONTENT_W * 0.79, w: CONTENT_W * 0.115 },
+  court: { x: CONTENT_W * 0.905, w: CONTENT_W * 0.095 },
 };
 
 rounds.forEach((r, ri) => {
@@ -186,6 +198,7 @@ rounds.forEach((r, ri) => {
   // No "Pair" header: the two-color banner above already names each side, and
   // the pairs are right/left aligned against the "vs" rather than one column.
   text("Line", { x: M + COL.line.x, top: headTop, size: 10, bold: true, c: hex("#94a3b8") });
+  text("Start", { x: M + COL.time.x, top: headTop, size: 10, bold: true, c: hex("#94a3b8") });
   text("Court", { x: M + COL.court.x, top: headTop, size: 10, bold: true, c: hex("#94a3b8") });
 
   const rowsTop2 = roundTop + sBH + sHeadH;
@@ -206,6 +219,14 @@ rounds.forEach((r, ri) => {
     });
     text("vs", { x: M + COL.vs.x, top: base, size: 10, c: hex("#cbd5e1") });
     text(pairB, { x: M + COL.pairB.x, top: base, size: fitSize(pairB, COL.pairB.w - 10, { max: 14, min: 9 }) });
+    const start = startByMatch.get(m.id);
+    text(start != null ? formatClock(start) : "—", {
+      x: M + COL.time.x,
+      top: base,
+      size: 12,
+      bold: true,
+      c: hex("#334155"),
+    });
     text(m.court ?? "___", { x: M + COL.court.x, top: base, size: 13, c: hex("#94a3b8") });
 
     page.drawLine({

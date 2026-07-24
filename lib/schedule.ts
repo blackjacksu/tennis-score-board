@@ -9,7 +9,9 @@
 // Pure and dependency-free (no Date, no timezone), so it is trivial to unit
 // test and renders identically on the server and in the browser.
 
-import { COURT_NUMBERS } from "./court";
+// Explicit .ts extension so the print generators, which Node runs directly with
+// type stripping, can import this module without a bundler resolving it.
+import { COURT_NUMBERS } from "./court.ts";
 import type { Line, Match } from "./types";
 
 /** Minutes allotted to a single match. */
