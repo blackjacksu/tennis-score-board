@@ -56,14 +56,14 @@ from (values
   ('Yellow', 'Nate Raughley',    3.5),  -- Line 3
   ('Yellow', 'Ramon Mangaser',   3.5),  -- Line 3
   ('Yellow', 'Thomas Yan',       3.5),  -- Line 4
-  ('Yellow', 'Andy Y.',          3.5),  -- Line 4  (Andy / iamyuanchung)
+  ('Yellow', 'Andy Chung',       3.5),  -- Line 4  (Andy / iamyuanchung)
   ('Yellow', 'Ben Chen',         3.5),  -- Line 5
   ('Yellow', 'Tony Peng',        3.0),  -- Line 5  (Shiuan-Tung "Tony" Peng)
   ('Yellow', 'Faye Chang',       3.0),  -- Line 6
   ('Yellow', 'David Fang',       3.0),  -- Line 6
-  ('Yellow', 'Martin Hsieh',     2.5),  -- Line 7
+  ('Yellow', '吳杏玫',            2.5),  -- Line 7  (no rating on form; seeded 2.5)
   ('Yellow', 'Cody',             2.5),  -- Line 7
-  ('Yellow', '吳杏玫',            2.5),  -- Line 8  (no rating on form; seeded 2.5)
+  ('Yellow', 'Martin Hsieh',     2.5),  -- Line 8
   ('Yellow', '李佩安',            2.0)   -- Line 8  (Pei-An Li)
 ) as v(team_name, name, ntrp)
 join teams t on t.name = v.team_name;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   COURT_NUMBERS,
+  firstFreeCourt,
   MAX_COURT,
   MIN_COURT,
   courtNumber,
@@ -69,5 +70,35 @@ describe("courtNumber", () => {
       expect(parsed.ok).toBe(true);
       if (parsed.ok) expect(courtNumber(parsed.court)).toBe(n);
     }
+  });
+});
+
+describe("firstFreeCourt", () => {
+  it("takes court 1 when nothing is in use", () => {
+    expect(firstFreeCourt([])).toBe(1);
+  });
+
+  it("skips courts already in use", () => {
+    expect(firstFreeCourt([1, 2, 3])).toBe(4);
+    expect(firstFreeCourt([1, 3])).toBe(2); // fills the gap, not the end
+  });
+
+  it("returns null once every court is busy", () => {
+    expect(firstFreeCourt(COURT_NUMBERS)).toBeNull();
+  });
+
+  it("ignores numbers that aren't real courts", () => {
+    expect(firstFreeCourt([99, 0, -1])).toBe(1);
+  });
+
+  it("hands out distinct courts when called repeatedly", () => {
+    const taken: number[] = [];
+    for (let i = 0; i < COURT_NUMBERS.length; i++) {
+      const next = firstFreeCourt(taken);
+      expect(next).not.toBeNull();
+      taken.push(next!);
+    }
+    expect(new Set(taken).size).toBe(COURT_NUMBERS.length);
+    expect(firstFreeCourt(taken)).toBeNull();
   });
 });

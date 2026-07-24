@@ -32,6 +32,16 @@ export function parseCourtInput(raw: string): CourtParseResult {
 }
 
 /**
+ * Lowest-numbered court nobody is using, or null when all six are busy.
+ * Used to put a match on court the moment it starts, so it appears on the
+ * court map without the admin having to type a number first.
+ */
+export function firstFreeCourt(taken: Iterable<number>): number | null {
+  const busy = new Set(taken);
+  return COURT_NUMBERS.find((n) => !busy.has(n)) ?? null;
+}
+
+/**
  * Read a stored court value as a court number, or null when it is unset or
  * doesn't name one of the physical courts (so the map can ignore it).
  */

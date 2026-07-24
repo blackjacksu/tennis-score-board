@@ -42,19 +42,19 @@ from (values
   (1, 1, 3, 'Richard Lin / Willy Su',        'Ching-Yen Shih / Yu Cheng',       2),
   (2, 1, 3, 'Kevin Chiang / Yi-Chih Wang',   '鄧之彬 / Ronald Feng',            2),
   (3, 1, 3, 'Willy Su / Mu-Ting Chien',      'Nate Raughley / Ramon Mangaser',  2),
-  (4, 1, 3, 'Wendy Wang / 楊之安',            'Thomas Yan / Andy Y.',            2),
+  (4, 1, 3, 'Wendy Wang / 楊之安',            'Thomas Yan / Andy Chung',         2),
   (5, 1, 3, 'Derrick Chueh / Tim Chen',      'Ben Chen / Tony Peng',            2),
   (6, 1, 3, 'Chris Lin / Joshua Lee',        'Faye Chang / David Fang',         2),
-  (7, 1, 3, 'Andy Chen / Avery Hsieh',       'Martin Hsieh / Cody',             2),
-  (8, 1, 3, 'Julie Hsieh / Jerry Chiu',      '吳杏玫 / 李佩安',                 2),
+  (7, 1, 3, 'Andy Chen / Avery Hsieh',       '吳杏玫 / Cody',                   2),
+  (8, 1, 3, 'Julie Hsieh / Jerry Chiu',      'Martin Hsieh / 李佩安',           2),
   -- round 3: Green (2) vs Yellow (3)
   (1, 2, 3, 'Andrew Liao / Fred Lin',        'Ching-Yen Shih / Yu Cheng',       3),
   (2, 2, 3, 'Hung-Ying Lin / Vincent Tseng', '鄧之彬 / Ronald Feng',            3),
   (3, 2, 3, 'Theo Pai / Christine Lin',      'Nate Raughley / Ramon Mangaser',  3),
-  (4, 2, 3, 'Peichun Su / Alice Liu',        'Thomas Yan / Andy Y.',            3),
+  (4, 2, 3, 'Peichun Su / Alice Liu',        'Thomas Yan / Andy Chung',         3),
   (5, 2, 3, 'Shih-Yen Pan / Janice Chen',    'Ben Chen / Tony Peng',            3),
   (6, 2, 3, 'Daniel Tiedemann / Chih-Yu Lee','Faye Chang / David Fang',         3),
-  (7, 2, 3, 'Andy Lu / Zane Shao',           'Martin Hsieh / Cody',             3),
-  (8, 2, 3, 'Margot Lai / Grace Shih',       '吳杏玫 / 李佩安',                 3)
+  (7, 2, 3, 'Andy Lu / Zane Shao',           '吳杏玫 / Cody',                   3),
+  (8, 2, 3, 'Margot Lai / Grace Shih',       'Martin Hsieh / 李佩安',           3)
 ) as m(sort_order, team_a_id, team_b_id, pair_a, pair_b, round)
 join lines l on l.sort_order = m.sort_order;

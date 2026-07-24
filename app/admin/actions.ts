@@ -10,7 +10,13 @@ export async function updateScore(
   matchId: number,
   scoreA: number,
   scoreB: number,
-  status: MatchStatus
+  status: MatchStatus,
+  /**
+   * Court to write alongside the score. Omit to leave the court alone; pass a
+   * value to set it in the same write — that's how starting a match puts it on
+   * a court and onto the viewer's court map in one round trip.
+   */
+  rawCourt?: string
 ): Promise<{ ok: boolean; error?: string }> {
   if (!(await isAdmin())) {
     return { ok: false, error: "Unauthorized" };
@@ -29,6 +35,13 @@ export async function updateScore(
     };
   }
 
+  let court: string | null | undefined;
+  if (rawCourt !== undefined) {
+    const parsed = parseCourtInput(rawCourt);
+    if (!parsed.ok) return { ok: false, error: parsed.reason };
+    court = parsed.court;
+  }
+
   const supabase = getSupabaseAdmin();
   const { error } = await supabase
     .from("matches")
@@ -36,6 +49,7 @@ export async function updateScore(
       score_a: scoreA,
       score_b: scoreB,
       status,
+      ...(court !== undefined ? { court } : {}),
       updated_at: new Date().toISOString(),
     })
     .eq("id", matchId);

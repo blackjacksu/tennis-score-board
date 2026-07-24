@@ -39,8 +39,8 @@ const lineById = new Map(demoLines.map((l) => [l.id, l]));
 const rosterByTeam = new Map(demoRoster.map((r) => [r.teamId, r]));
 
 // Rebuild the round-robin schedule (one tie per round) from the flat matches
-// list: group by round, keep each tie's team pair, and sort its lines by the
-// line's sort_order so line 1 always leads.
+// list: group by round and keep each tie's team pair. Row order comes from the
+// timetable below, not the line number.
 const roundsMap = new Map();
 for (const m of demoMatches) {
   if (!roundsMap.has(m.round)) {
@@ -50,17 +50,26 @@ for (const m of demoMatches) {
 }
 const rounds = [...roundsMap.values()].sort((a, b) => a.round - b.round);
 
-// Start time per match, from the same timetable the live-score page renders, so
-// the poster and the board can never disagree. Note the times are not monotonic
-// down a round's Line 1..8 rows: the weakest lines go on court first, so Lines
-// 8..3 share the earlier block and Lines 2..1 the later one.
+// Start time, court, and running order per match, from the same timetable the
+// live-score page renders, so the poster and the board can never disagree.
 const startByMatch = new Map();
+const courtByMatch = new Map();
+const orderByMatch = new Map();
+let playOrder = 0;
 for (const slot of buildTimetable(demoMatches, lineById)) {
-  for (const m of slot.matches) startByMatch.set(m.id, slot.startMinutes);
+  for (const { match, court } of slot.matches) {
+    startByMatch.set(match.id, slot.startMinutes);
+    courtByMatch.set(match.id, court);
+    orderByMatch.set(match.id, playOrder++);
+  }
 }
+
+// Rows read top-to-bottom in the order they are actually played — earliest
+// start first — rather than by line number, so the poster is a timetable you
+// can follow down the page.
 for (const r of rounds) {
   r.matches.sort(
-    (a, b) => (lineById.get(a.line_id)?.sort_order ?? 0) - (lineById.get(b.line_id)?.sort_order ?? 0)
+    (a, b) => (orderByMatch.get(a.id) ?? 0) - (orderByMatch.get(b.id) ?? 0)
   );
 }
 
@@ -227,7 +236,14 @@ rounds.forEach((r, ri) => {
       bold: true,
       c: hex("#334155"),
     });
-    text(m.court ?? "___", { x: M + COL.court.x, top: base, size: 13, c: hex("#94a3b8") });
+    const court = courtByMatch.get(m.id);
+    text(court != null ? String(court) : "___", {
+      x: M + COL.court.x,
+      top: base,
+      size: 13,
+      bold: court != null,
+      c: hex("#334155"),
+    });
 
     page.drawLine({
       start: { x: M, y: yb(rTop) },

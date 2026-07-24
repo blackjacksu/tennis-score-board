@@ -91,7 +91,7 @@ function Court({
   const live = !!match;
 
   return (
-    <div className="flex w-52 shrink-0 flex-col">
+    <div className="flex w-64 shrink-0 flex-col">
       {/* Court label + status */}
       <div className="mb-1.5 flex items-center justify-between px-0.5">
         <div className="flex items-baseline gap-1.5">
@@ -117,6 +117,13 @@ function Court({
           )}
         </span>
       </div>
+
+      {/* Team A sits above the court, team B below — outside the box, so a
+          long pair name can never land on top of the court markings. */}
+      <PairLabel
+        name={live ? (match!.pair_a ?? t("tbd")) : null}
+        color={teamA?.color}
+      />
 
       {/* The court itself */}
       <div className="relative aspect-[100/170] overflow-hidden rounded-xl border-2 border-slate-300 bg-white shadow-sm">
@@ -154,22 +161,10 @@ function Court({
         )}
 
         {live ? (
-          <div className="absolute inset-0 flex flex-col p-2.5">
-            <HalfInfo
-              pair={match!.pair_a ?? t("tbd")}
-              rating={match!.rating_a ?? line?.ntrp ?? null}
-              score={match!.score_a}
-              ratingLabel={t("rating")}
-              align="top"
-            />
-            <HalfInfo
-              pair={match!.pair_b ?? t("tbd")}
-              rating={match!.rating_b ?? line?.ntrp ?? null}
-              score={match!.score_b}
-              ratingLabel={t("rating")}
-              align="bottom"
-            />
-          </div>
+          <>
+            <ScoreChip value={match!.score_a} align="top" />
+            <ScoreChip value={match!.score_b} align="bottom" />
+          </>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="rounded-full bg-white/70 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -178,58 +173,52 @@ function Court({
           </div>
         )}
       </div>
+
+      <PairLabel
+        name={live ? (match!.pair_b ?? t("tbd")) : null}
+        color={teamB?.color}
+      />
     </div>
   );
 }
 
-// One team's side of the court: pair, rating and a big score by the net.
-// The court half is tinted in the team color, so no separate team badge here.
-function HalfInfo({
-  pair,
-  rating,
-  score,
-  ratingLabel,
-  align,
+// A pair's names on their side of the court, drawn outside the court box.
+// The dot repeats the team color that tints their half. Fixed height so every
+// court in the row lines up whether or not it has a match on it.
+function PairLabel({
+  name,
+  color,
 }: {
-  pair: string;
-  rating: number | string | null;
-  score: number;
-  ratingLabel: string;
-  align: "top" | "bottom";
+  name: string | null;
+  color: string | undefined;
 }) {
-  const body = (
-    <>
-      <p className="text-xs font-semibold leading-tight text-slate-800">
-        {pair}
-      </p>
-      {rating != null && (
-        <span className="mt-1 inline-block rounded bg-white/80 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-slate-600 ring-1 ring-slate-200">
-          {ratingLabel} {rating}
-        </span>
+  return (
+    <div className="flex h-6 items-center gap-1.5 px-0.5">
+      {name && (
+        <>
+          <span
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ backgroundColor: color ?? "#94a3b8" }}
+          />
+          <span className="truncate text-xs font-semibold text-slate-800">
+            {name}
+          </span>
+        </>
       )}
-    </>
-  );
-  const scoreEl = (
-    <div className="text-right text-3xl font-black leading-none tabular-nums text-slate-900">
-      {score}
     </div>
   );
+}
 
+// A team's games in the current set, parked just off the net on a solid chip
+// so it reads cleanly over the service lines.
+function ScoreChip({ value, align }: { value: number; align: "top" | "bottom" }) {
   return (
     <div
-      className={`flex flex-1 flex-col ${align === "bottom" ? "justify-end" : "justify-start"}`}
+      className={`absolute right-3 ${align === "top" ? "bottom-[53%]" : "top-[53%]"}`}
     >
-      {align === "top" ? (
-        <>
-          {body}
-          <div className="mt-auto pt-1">{scoreEl}</div>
-        </>
-      ) : (
-        <>
-          <div className="mb-auto pb-1">{scoreEl}</div>
-          {body}
-        </>
-      )}
+      <span className="block rounded-lg bg-white/85 px-2 py-0.5 text-3xl font-black leading-none tabular-nums text-slate-900 shadow-sm ring-1 ring-slate-200">
+        {value}
+      </span>
     </div>
   );
 }
@@ -335,16 +324,18 @@ function CourtLines({ uid }: { uid: number }) {
   );
 }
 
-// The spectator stand that sits between courts 3 and 4.
+// The spectator stand that sits between courts 3 and 4, with the venue's main
+// door on its bottom edge — the door is what orients the map for anyone
+// walking in.
 function SpectatorStand() {
   const { t } = useI18n();
   const rows = [6, 6, 5, 5, 4]; // tiers, widest nearest the courts
   return (
-    <div className="flex w-24 shrink-0 flex-col">
+    <div className="flex w-28 shrink-0 flex-col">
       <div className="mb-1.5 px-0.5 text-center text-[11px] font-semibold text-slate-400">
         &nbsp;
       </div>
-      <div className="relative flex flex-1 flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-2">
+      <div className="relative flex flex-1 flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-2 pb-16">
         <span className="text-lg" role="img" aria-label="spectators">
           👥
         </span>
@@ -363,7 +354,42 @@ function SpectatorStand() {
         <span className="mt-1 text-center text-[10px] font-bold uppercase leading-tight tracking-wide text-slate-500">
           {t("spectators")}
         </span>
+
+        {/* Main door, cut into the bottom wall */}
+        <div className="absolute inset-x-0 -bottom-[2px] flex flex-col items-center">
+          <span className="pb-0.5 text-center text-[10px] font-bold uppercase leading-tight tracking-wide text-slate-600">
+            {t("mainDoor")}
+          </span>
+          <MainDoorIcon />
+        </div>
       </div>
     </div>
+  );
+}
+
+// A doorway in plan view, drawn to sit on the stand's bottom wall: an opening
+// masked out of the dashed wall, the door leaf swung inward, and its arc.
+function MainDoorIcon() {
+  const wall = "#475569"; // slate-600
+  const bg = "#f8fafc"; // slate-50, same as the stand — masks the dashed wall
+  return (
+    <svg viewBox="0 0 56 34" className="h-[34px] w-14" aria-hidden>
+      {/* punch the opening out of the box's dashed border */}
+      <rect x="13" y="27" width="30" height="7" fill={bg} />
+      {/* swing arc */}
+      <path
+        d="M16 6 A 24 24 0 0 1 40 30"
+        fill="none"
+        stroke={wall}
+        strokeWidth="1.2"
+        strokeDasharray="3 3"
+        opacity="0.7"
+      />
+      {/* jambs either side of the opening */}
+      <line x1="16" y1="27" x2="16" y2="33" stroke={wall} strokeWidth="2" strokeLinecap="round" />
+      <line x1="40" y1="27" x2="40" y2="33" stroke={wall} strokeWidth="2" strokeLinecap="round" />
+      {/* door leaf, hinged at the left jamb, swung into the venue */}
+      <line x1="16" y1="30" x2="16" y2="6" stroke={wall} strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
   );
 }

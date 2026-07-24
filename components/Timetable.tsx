@@ -1,13 +1,12 @@
 "use client";
 
-import { courtNumber } from "@/lib/court";
 import { useI18n } from "@/lib/i18n";
 import { PARALLEL_MATCHES, buildTimetable, formatClock } from "@/lib/schedule";
 import type { Line, Match, Team } from "@/lib/types";
 
 /**
- * When each match goes on court. Rounds run back to back, and inside a round
- * the weakest lines start first, so the day builds toward the top lines.
+ * When each match goes on court, and on which court. Yellow anchors all six
+ * courts, so a block mixes two ties — the row's team-color dots say who's who.
  */
 export default function Timetable({
   matches,
@@ -31,57 +30,43 @@ export default function Timetable({
       </h2>
 
       <ol className="space-y-2">
-        {slots.map((slot) => {
-          const first = slot.matches[0];
-          const tieLabel = first
-            ? `${teamName(teamById.get(first.team_a_id))} ${t("vs")} ${teamName(
-                teamById.get(first.team_b_id)
-              )}`
-            : "";
+        {slots.map((slot) => (
+          <li
+            key={slot.index}
+            className="flex flex-col gap-2 rounded-lg border border-slate-100 bg-slate-50/60 p-2 sm:flex-row sm:gap-3"
+          >
+            {/* Time block */}
+            <div className="flex shrink-0 items-baseline gap-2 sm:w-32 sm:flex-col sm:items-start sm:gap-0.5">
+              <span className="text-base font-black tabular-nums text-slate-900">
+                {formatClock(slot.startMinutes)}
+              </span>
+              <span className="text-[11px] font-medium text-slate-400">
+                {day} · {formatClock(slot.endMinutes)}
+              </span>
+            </div>
 
-          return (
-            <li
-              key={slot.index}
-              className="flex flex-col gap-2 rounded-lg border border-slate-100 bg-slate-50/60 p-2 sm:flex-row sm:gap-3"
-            >
-              {/* Time block */}
-              <div className="flex shrink-0 items-baseline gap-2 sm:w-32 sm:flex-col sm:items-start sm:gap-0.5">
-                <span className="text-base font-black tabular-nums text-slate-900">
-                  {formatClock(slot.startMinutes)}
-                </span>
-                <span className="text-[11px] font-medium text-slate-400">
-                  {day} · {formatClock(slot.endMinutes)}
-                </span>
-              </div>
-
-              {/* Matches on court in this block */}
-              <div className="min-w-0 flex-1">
-                <div className="mb-1 flex flex-wrap items-baseline gap-x-2 text-[11px]">
-                  <span className="font-bold uppercase tracking-wide text-slate-400">
-                    {t("round", { n: slot.round })}
-                  </span>
-                  <span className="font-semibold text-slate-600">{tieLabel}</span>
-                  {slot.matches.length === PARALLEL_MATCHES && (
-                    <span className="text-slate-400">
-                      {t("allCourts", { n: PARALLEL_MATCHES })}
-                    </span>
-                  )}
+            {/* Matches on court in this block, in court order */}
+            <div className="min-w-0 flex-1">
+              {slot.matches.length === PARALLEL_MATCHES && (
+                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                  {t("allCourts", { n: PARALLEL_MATCHES })}
                 </div>
-                <ul className="space-y-0.5">
-                  {slot.matches.map((m) => (
-                    <SlotRow
-                      key={m.id}
-                      match={m}
-                      teamA={teamById.get(m.team_a_id)}
-                      teamB={teamById.get(m.team_b_id)}
-                      line={lineById.get(m.line_id)}
-                    />
-                  ))}
-                </ul>
-              </div>
-            </li>
-          );
-        })}
+              )}
+              <ul className="space-y-0.5">
+                {slot.matches.map(({ match, court }) => (
+                  <SlotRow
+                    key={match.id}
+                    match={match}
+                    court={court}
+                    teamA={teamById.get(match.team_a_id)}
+                    teamB={teamById.get(match.team_b_id)}
+                    line={lineById.get(match.line_id)}
+                  />
+                ))}
+              </ul>
+            </div>
+          </li>
+        ))}
       </ol>
     </section>
   );
@@ -89,22 +74,28 @@ export default function Timetable({
 
 function SlotRow({
   match,
+  court,
   teamA,
   teamB,
   line,
 }: {
   match: Match;
+  court: number;
   teamA: Team | undefined;
   teamB: Team | undefined;
   line: Line | undefined;
 }) {
   const { t } = useI18n();
-  const court = courtNumber(match.court);
 
   return (
     <li className="flex items-center gap-2 text-xs">
-      <span className="w-12 shrink-0 font-bold text-slate-500">
-        {line?.label?.replace(/^Line\s*/, "L") ?? "—"}
+      <span className="flex w-16 shrink-0 items-baseline gap-1">
+        <span className="rounded bg-slate-800 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-white">
+          {court}
+        </span>
+        <span className="font-bold text-slate-500">
+          {line?.label?.replace(/^Line\s*/, "L") ?? "—"}
+        </span>
       </span>
       <span className="flex min-w-0 flex-1 items-center gap-1.5">
         <Dot color={teamA?.color} />
@@ -116,9 +107,6 @@ function SlotRow({
           {match.pair_b ?? t("tbd")}
         </span>
         <Dot color={teamB?.color} />
-      </span>
-      <span className="w-14 shrink-0 text-right tabular-nums text-slate-400">
-        {court != null ? `${t("court")} ${court}` : "—"}
       </span>
     </li>
   );

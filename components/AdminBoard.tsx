@@ -6,8 +6,19 @@ import { updateCourt, updateScore } from "@/app/admin/actions";
 import Header from "@/components/Header";
 import { useI18n } from "@/lib/i18n";
 import { isDemoMode, isSupabaseConfigured } from "@/lib/supabase";
-import { MAX_SET_GAMES, classifySetScore } from "@/lib/setScore";
-import { MAX_COURT, MIN_COURT, courtNumber, parseCourtInput } from "@/lib/court";
+import {
+  MAX_SET_GAMES,
+  classifySetScore,
+  isCompletedSetScore,
+} from "@/lib/setScore";
+import {
+  MAX_COURT,
+  MIN_COURT,
+  courtNumber,
+  firstFreeCourt,
+  parseCourtInput,
+} from "@/lib/court";
+import { buildTimetable } from "@/lib/schedule";
 import type { Line, Match, MatchStatus, Team } from "@/lib/types";
 import { useTournamentData } from "@/lib/useTournamentData";
 
@@ -20,14 +31,41 @@ export default function AdminBoard() {
   const { t, teamName } = useI18n();
   const { matches, teamById, lineById, loading } = useTournamentData();
 
-  const rounds = [...new Set(matches.map((m) => m.round))].sort(
-    (a, b) => a - b
+  // Demo mode has no database, so the board holds the admin's edits in memory
+  // and merges them over the demo rows. Keeping them here rather than inside
+  // each card is what lets a finished match hand its court back, so the next
+  // match to start can claim it — exactly as the real rows behave over
+  // Supabase realtime.
+  const [demoEdits, setDemoEdits] = useState<Map<number, Partial<Match>>>(
+    () => new Map()
   );
+  const applyDemoEdit = (id: number, patch: Partial<Match>) =>
+    setDemoEdits((prev) =>
+      new Map(prev).set(id, { ...prev.get(id), ...patch })
+    );
+
+  const rows = isDemoMode
+    ? matches.map((m) => {
+        const patch = demoEdits.get(m.id);
+        return patch ? { ...m, ...patch } : m;
+      })
+    : matches;
+
+  const rounds = [...new Set(rows.map((m) => m.round))].sort((a, b) => a - b);
+
+  // The court each match is planned for, from the shared timetable. Starting a
+  // match pre-fills this so the board's courts match the printed poster; the
+  // admin can still override when a court frees up early.
+  const plannedCourt = new Map<number, number>();
+  for (const slot of buildTimetable(rows, lineById)) {
+    for (const { match, court } of slot.matches) plannedCourt.set(match.id, court);
+  }
 
   // Which live match holds each court, so a card can warn when two matches are
-  // sent to the same place (the court map can only show one of them).
+  // sent to the same place (the court map can only show one of them) and so
+  // starting a match can pick a court nobody is on.
   const courtOwner = new Map<number, number>();
-  for (const m of matches) {
+  for (const m of rows) {
     if (m.status !== "in_progress") continue;
     const n = courtNumber(m.court);
     if (n != null && !courtOwner.has(n)) courtOwner.set(n, m.id);
@@ -59,7 +97,7 @@ export default function AdminBoard() {
 
       <div className="space-y-6">
         {rounds.map((round) => {
-          const roundMatches = matches
+          const roundMatches = rows
             .filter((m) => m.round === round)
             .sort(
               (a, b) =>
@@ -89,6 +127,8 @@ export default function AdminBoard() {
                     teamB={teamById.get(m.team_b_id)}
                     line={lineById.get(m.line_id)}
                     courtOwner={courtOwner}
+                    plannedCourt={plannedCourt.get(m.id) ?? null}
+                    onDemoEdit={applyDemoEdit}
                   />
                 ))}
               </div>
@@ -106,12 +146,16 @@ function AdminMatchCard({
   teamB,
   line,
   courtOwner,
+  plannedCourt,
+  onDemoEdit,
 }: {
   match: Match;
   teamA: Team | undefined;
   teamB: Team | undefined;
   line: Line | undefined;
   courtOwner: Map<number, number>;
+  plannedCourt: number | null;
+  onDemoEdit: (id: number, patch: Partial<Match>) => void;
 }) {
   const { t, teamName } = useI18n();
   const [pending, startTransition] = useTransition();
@@ -121,6 +165,10 @@ function AdminMatchCard({
   const [draftA, setDraftA] = useState<string | null>(null);
   const [draftB, setDraftB] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // In demo mode the board has already merged our edits into `match`, so these
+  // read the same either way.
+  const status = match.status;
+  const court = match.court;
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Bumped on every local edit, and caught up once that edit is saved. While
@@ -148,17 +196,30 @@ function AdminMatchCard({
   function commit(
     nextA: number,
     nextB: number,
-    status: MatchStatus,
+    nextStatus: MatchStatus,
+    nextCourt: string | undefined,
     seq: number
   ) {
-    // In demo mode there's no real database; keep edits local so the controls
-    // still respond without erroring against the placeholder Supabase project.
+    // In demo mode there's no real database; hand the change to the board so
+    // it merges into the rows everything else on this page reads.
     if (isDemoMode) {
       savedSeq.current = seq;
+      onDemoEdit(match.id, {
+        score_a: nextA,
+        score_b: nextB,
+        status: nextStatus,
+        ...(nextCourt !== undefined ? { court: nextCourt || null } : {}),
+      });
       return;
     }
     startTransition(async () => {
-      const result = await updateScore(match.id, nextA, nextB, status);
+      const result = await updateScore(
+        match.id,
+        nextA,
+        nextB,
+        nextStatus,
+        nextCourt
+      );
       savedSeq.current = Math.max(savedSeq.current, seq);
       if (!result.ok && seq === editSeq.current) {
         // Nothing newer is queued, so fall back to what the database holds.
@@ -169,25 +230,52 @@ function AdminMatchCard({
     });
   }
 
+  /**
+   * Court to write when moving to `nextStatus`. Starting a match with no court
+   * yet takes its planned court from the timetable (so the board matches the
+   * printed poster), or the lowest free court if that one is already busy. The
+   * admin can still retype it if a court frees up early. `undefined` means
+   * leave the court exactly as it is.
+   */
+  function courtFor(nextStatus: MatchStatus): string | undefined {
+    if (nextStatus !== "in_progress") return undefined;
+    if (courtNumber(court) != null) return undefined; // already on a court
+    const taken = new Set(
+      [...courtOwner].filter(([, id]) => id !== match.id).map(([n]) => n)
+    );
+    if (plannedCourt != null && !taken.has(plannedCourt)) {
+      return String(plannedCourt);
+    }
+    const free = firstFreeCourt(taken);
+    return free != null ? String(free) : undefined;
+  }
+
   /** Schedule a save, replacing any save still waiting out its debounce. */
   function queueSave(
     nextA: number,
     nextB: number,
-    status: MatchStatus,
+    nextStatus: MatchStatus,
     delay = SAVE_DEBOUNCE_MS
   ) {
+    // A completed set is the one precondition the server enforces; check it
+    // here too so the button explains itself instead of silently failing.
+    if (nextStatus === "completed" && !isCompletedSetScore(nextA, nextB)) {
+      setError(t("needCompletedSet"));
+      return;
+    }
+    const nextCourt = courtFor(nextStatus);
     const seq = ++editSeq.current;
     setError(null);
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       timer.current = null;
-      commit(nextA, nextB, status, seq);
+      commit(nextA, nextB, nextStatus, nextCourt, seq);
     }, delay);
   }
 
   // Touching the score of a scheduled match is what starts it.
   const startedStatus = (): MatchStatus =>
-    match.status === "scheduled" ? "in_progress" : match.status;
+    status === "scheduled" ? "in_progress" : status;
 
   /**
    * Where a +/- tap would land, or null if it can't: past the 0–7 bound, or on
@@ -252,19 +340,23 @@ function AdminMatchCard({
     scheduled: t("scheduled"),
     in_progress: t("inProgress"),
     completed: t("completed"),
-  }[match.status];
+  }[status];
 
   // A finished match locks the score controls; otherwise scores stay editable
   // even while a save is in flight, since saves are debounced and sequenced.
-  const locked = match.status === "completed";
+  const locked = status === "completed";
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       <CourtBar
-        match={match}
+        matchId={match.id}
+        court={court}
+        plannedCourt={plannedCourt}
+        status={status}
         line={line}
         statusLabel={statusLabel}
         courtOwner={courtOwner}
+        onDemoCourtChange={(next) => onDemoEdit(match.id, { court: next })}
       />
 
       <div className="p-3">
@@ -305,8 +397,11 @@ function AdminMatchCard({
           locked={locked}
         />
 
-        <div className="mt-3 flex gap-2">
-          {match.status === "scheduled" && (
+        {/* Scheduled -> Live -> Final, with the step you're on highlighted. */}
+        <StateSteps status={status} />
+
+        <div className="mt-2 flex gap-2">
+          {status === "scheduled" && (
             <ActionButton
               onClick={() => queueSave(scoreA, scoreB, "in_progress", 0)}
               loading={pending}
@@ -314,7 +409,7 @@ function AdminMatchCard({
               {t("startMatch")}
             </ActionButton>
           )}
-          {match.status === "in_progress" && (
+          {status === "in_progress" && (
             <ActionButton
               onClick={() => queueSave(scoreA, scoreB, "completed", 0)}
               variant="primary"
@@ -323,7 +418,7 @@ function AdminMatchCard({
               {t("markFinal")}
             </ActionButton>
           )}
-          {match.status === "completed" && (
+          {status === "completed" && (
             <ActionButton
               onClick={() => queueSave(scoreA, scoreB, "in_progress", 0)}
               loading={pending}
@@ -343,31 +438,41 @@ function AdminMatchCard({
  * match on the map as soon as the row round-trips.
  */
 function CourtBar({
-  match,
+  matchId,
+  court: courtValue,
+  plannedCourt,
+  status,
   line,
   statusLabel,
   courtOwner,
+  onDemoCourtChange,
 }: {
-  match: Match;
+  matchId: number;
+  court: string | null;
+  plannedCourt: number | null;
+  status: MatchStatus;
   line: Line | undefined;
   statusLabel: string;
   courtOwner: Map<number, number>;
+  onDemoCourtChange: (court: string | null) => void;
 }) {
   const { t } = useI18n();
   const [pending, startTransition] = useTransition();
-  const [text, setText] = useState(match.court ?? "");
+  const [text, setText] = useState(courtValue ?? "");
   const [focused, setFocused] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Set while this card owns the value: mid-edit, saving, or (in demo mode)
-  // holding a change that has nowhere to be persisted.
+  // Set while a typed edit is in flight; until it lands we hold our own text so
+  // an incoming row can't overwrite what the admin is halfway through typing.
   const dirty = useRef(false);
-  const matchRef = useRef(match);
-  matchRef.current = match;
+  const courtRef = useRef(courtValue);
+  courtRef.current = courtValue;
 
+  // Follow the card's court whenever we aren't the one changing it — that's
+  // how the number auto-filled by starting a match shows up in the box.
   useEffect(() => {
     if (focused || dirty.current) return;
-    setText(match.court ?? "");
-  }, [match.court, focused]);
+    setText(courtValue ?? "");
+  }, [courtValue, focused]);
 
   function commitCourt() {
     const parsed = parseCourtInput(text);
@@ -378,22 +483,28 @@ function CourtBar({
     const next = parsed.court ?? "";
     setError(null);
     setText(next);
+    if (isDemoMode) {
+      onDemoCourtChange(parsed.court); // no database; keep it on the card
+      return;
+    }
     dirty.current = true;
-    if (isDemoMode) return; // no database to write to; keep the local value
     startTransition(async () => {
-      const result = await updateCourt(match.id, next);
+      const result = await updateCourt(matchId, next);
       dirty.current = false;
       if (!result.ok) {
         setError(result.error ?? "Error");
-        setText(matchRef.current.court ?? "");
+        setText(courtRef.current ?? "");
       }
     });
   }
 
   const court = courtNumber(text);
   const owner = court != null ? courtOwner.get(court) : undefined;
-  const clash = owner != null && owner !== match.id;
-  const needsStart = court != null && match.status !== "in_progress";
+  // A finished match has handed its court back, so it neither clashes with the
+  // match now using that court nor needs prompting to start.
+  const done = status === "completed";
+  const clash = !done && owner != null && owner !== matchId;
+  const needsStart = !done && court != null && status === "scheduled";
   const assigned = court != null;
 
   return (
@@ -415,7 +526,7 @@ function CourtBar({
             type="text"
             inputMode="numeric"
             value={text}
-            placeholder="–"
+            placeholder={plannedCourt != null ? String(plannedCourt) : "–"}
             aria-label={t("court")}
             onChange={(e) => setText(e.target.value)}
             onFocus={(e) => {
@@ -438,7 +549,9 @@ function CourtBar({
           <span
             className={`text-[10px] ${assigned ? "text-white/50" : "text-slate-400"}`}
           >
-            {MIN_COURT}–{MAX_COURT}
+            {!assigned && plannedCourt != null
+              ? t("plannedCourt", { n: plannedCourt })
+              : `${MIN_COURT}–${MAX_COURT}`}
           </span>
         </label>
 
@@ -481,6 +594,48 @@ function CourtBar({
               : t("courtNeedsStart"))}
         </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * The match's lifecycle as three steps — Not started → Live → Final — with the
+ * one you're on filled in, so it's obvious what the button below will do next.
+ */
+function StateSteps({ status }: { status: MatchStatus }) {
+  const { t } = useI18n();
+  const steps: { key: MatchStatus; label: string }[] = [
+    { key: "scheduled", label: t("notStarted") },
+    { key: "in_progress", label: t("inProgress") },
+    { key: "completed", label: t("completed") },
+  ];
+  const at = steps.findIndex((s) => s.key === status);
+
+  return (
+    <div className="mt-3 flex items-center gap-1.5" aria-label={t("scoreReporting")}>
+      {steps.map((step, i) => (
+        <div key={step.key} className="flex flex-1 items-center gap-1.5">
+          <span
+            className={`flex-1 rounded-full px-2 py-1 text-center text-[10px] font-bold uppercase tracking-wide ${
+              i === at
+                ? "bg-slate-900 text-white"
+                : i < at
+                  ? "bg-slate-200 text-slate-500"
+                  : "bg-slate-50 text-slate-300"
+            }`}
+          >
+            {step.label}
+          </span>
+          {i < steps.length - 1 && (
+            <span
+              aria-hidden
+              className={`text-[10px] ${i < at ? "text-slate-400" : "text-slate-200"}`}
+            >
+              →
+            </span>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
