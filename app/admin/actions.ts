@@ -1,9 +1,11 @@
 "use server";
 
-import { isAdmin } from "@/lib/auth";
+import { isAdmin, isValidPin } from "@/lib/auth";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import { classifySetScore } from "@/lib/setScore";
 import { parseCourtInput } from "@/lib/court";
+import { WRONG_PIN } from "@/lib/admin";
 import type { MatchStatus } from "@/lib/types";
 
 export async function updateScore(
@@ -53,6 +55,44 @@ export async function updateScore(
       updated_at: new Date().toISOString(),
     })
     .eq("id", matchId);
+
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+/**
+ * Wipe every match back to the start: 0-0, not started, off court. Guarded by
+ * the admin cookie AND a fresh PIN entry, since it throws away all reported
+ * scores. Returns WRONG_PIN when the re-entered PIN doesn't match, so the
+ * caller can reuse the existing "wrong PIN" copy.
+ *
+ * When Supabase isn't really configured (demo mode) there's nothing to write,
+ * so it just confirms the PIN and lets the client clear its local state.
+ */
+export async function resetAllScores(
+  pin: string
+): Promise<{ ok: boolean; error?: string }> {
+  if (!(await isAdmin())) {
+    return { ok: false, error: "Unauthorized" };
+  }
+  if (!isValidPin(pin)) {
+    return { ok: false, error: WRONG_PIN };
+  }
+  if (!isSupabaseConfigured) {
+    return { ok: true }; // demo mode — the board resets its own local rows
+  }
+
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase
+    .from("matches")
+    .update({
+      score_a: 0,
+      score_b: 0,
+      status: "scheduled",
+      court: null,
+      updated_at: new Date().toISOString(),
+    })
+    .gt("id", 0); // every match (ids are positive)
 
   if (error) return { ok: false, error: error.message };
   return { ok: true };

@@ -16,3 +16,8 @@ export async function isAdmin(): Promise<boolean> {
   const cookieStore = await cookies();
   return cookieStore.get(ADMIN_COOKIE)?.value === adminToken();
 }
+
+/** Does `pin` match the configured admin PIN? Same check the login route uses. */
+export function isValidPin(pin: string): boolean {
+  return !!process.env.ADMIN_PIN && pin === process.env.ADMIN_PIN;
+}

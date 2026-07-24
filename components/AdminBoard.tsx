@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { updateCourt, updateScore } from "@/app/admin/actions";
+import { resetAllScores, updateCourt, updateScore } from "@/app/admin/actions";
+import { WRONG_PIN } from "@/lib/admin";
 import Header from "@/components/Header";
 import { useI18n } from "@/lib/i18n";
 import { isDemoMode, isSupabaseConfigured } from "@/lib/supabase";
@@ -44,6 +45,19 @@ export default function AdminBoard() {
       new Map(prev).set(id, { ...prev.get(id), ...patch })
     );
 
+  // After the server confirms the PIN, wipe the board. Real rows are reset in
+  // the database and flow back over realtime; demo rows are reset here by
+  // stamping every match with a zeroed patch.
+  const resetDemoRows = () =>
+    setDemoEdits(
+      new Map(
+        matches.map((m) => [
+          m.id,
+          { score_a: 0, score_b: 0, status: "scheduled", court: null },
+        ])
+      )
+    );
+
   const rows = isDemoMode
     ? matches.map((m) => {
         const patch = demoEdits.get(m.id);
@@ -74,12 +88,12 @@ export default function AdminBoard() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-5">
       <Header subtitle={t("scoreReporting")} />
-      <Link
-        href="/"
-        className="mb-4 inline-block text-sm text-blue-600 underline"
-      >
-        → {t("viewerBoard")}
-      </Link>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <Link href="/" className="text-sm text-blue-600 underline">
+          → {t("viewerBoard")}
+        </Link>
+        <ResetControl onResetDemo={resetDemoRows} />
+      </div>
 
       {!isSupabaseConfigured && !isDemoMode && (
         <p className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
@@ -137,6 +151,113 @@ export default function AdminBoard() {
         })}
       </div>
     </main>
+  );
+}
+
+/**
+ * "Reset all scores", gated behind a fresh PIN entry. The button opens a small
+ * confirm panel with a password field; the server re-checks the PIN (same one
+ * as login) before wiping anything, so knowing the admin is logged in isn't
+ * enough on its own to throw away every reported score.
+ */
+function ResetControl({ onResetDemo }: { onResetDemo: () => void }) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const [pin, setPin] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [done, setDone] = useState(false);
+  const [pending, startTransition] = useTransition();
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open) inputRef.current?.focus();
+  }, [open]);
+
+  function close() {
+    setOpen(false);
+    setPin("");
+    setError(null);
+  }
+
+  function submit() {
+    if (pending) return;
+    setError(null);
+    startTransition(async () => {
+      const result = await resetAllScores(pin);
+      if (!result.ok) {
+        setError(result.error === WRONG_PIN ? t("wrongPin") : result.error ?? "Error");
+        setPin("");
+        inputRef.current?.focus();
+        return;
+      }
+      if (isDemoMode) onResetDemo();
+      close();
+      setDone(true);
+      setTimeout(() => setDone(false), 2500);
+    });
+  }
+
+  if (!open) {
+    return (
+      <div className="flex items-center gap-2">
+        {done && (
+          <span className="text-xs font-medium text-emerald-600">
+            {t("resetDone")}
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-semibold text-red-600 hover:bg-red-50 active:bg-red-100"
+        >
+          {t("resetScores")}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-sm rounded-xl border border-red-200 bg-red-50 p-3 shadow-sm">
+      <p className="text-sm font-bold text-red-700">{t("resetScores")}</p>
+      <p className="mt-0.5 text-xs text-red-600/90">{t("resetWarning")}</p>
+      <label className="mt-2 block text-xs font-medium text-red-700">
+        {t("resetPrompt")}
+        <input
+          ref={inputRef}
+          type="password"
+          inputMode="numeric"
+          autoComplete="off"
+          value={pin}
+          onChange={(e) => setPin(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") submit();
+            if (e.key === "Escape") close();
+          }}
+          className="mt-1 w-full rounded-lg border border-red-300 bg-white px-3 py-2 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-red-400"
+        />
+      </label>
+      {error && <p className="mt-1.5 text-xs font-medium text-red-600">{error}</p>}
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          onClick={close}
+          disabled={pending}
+          className="flex-1 rounded-lg border border-slate-300 bg-white py-2 text-sm font-semibold text-slate-700 disabled:opacity-60 active:bg-slate-100"
+        >
+          {t("cancel")}
+        </button>
+        <button
+          type="button"
+          onClick={submit}
+          disabled={pending || pin.length === 0}
+          aria-busy={pending}
+          className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-red-600 py-2 text-sm font-semibold text-white disabled:opacity-60 active:bg-red-700"
+        >
+          {pending && <Spinner light />}
+          {t("resetConfirm")}
+        </button>
+      </div>
+    </div>
   );
 }
 
