@@ -60,14 +60,8 @@ export default function ResultsSidebar({
                   {t("gamesWon")} {row.gamesWon}
                 </div>
               </div>
-              <div className="text-right">
-                <div className="text-2xl font-bold leading-none tabular-nums">
-                  {row.matchesWon}
-                </div>
-                <div className="text-[10px] uppercase tracking-wide text-slate-400">
-                  {t("matchesWon")}
-                </div>
-              </div>
+              <Stat value={row.tiesWon} label={t("tiesWon")} />
+              <Stat value={row.matchesWon} label={t("matchesWon")} />
             </li>
           );
         })}
@@ -90,5 +84,17 @@ export default function ResultsSidebar({
         <p className="text-[10px] text-slate-400">{t("tiebreakRule")}</p>
       </div>
     </section>
+  );
+}
+
+// One numeric column on a team card (ties won, matches won).
+function Stat({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="shrink-0 text-right">
+      <div className="text-2xl font-bold leading-none tabular-nums">{value}</div>
+      <div className="text-[10px] uppercase tracking-wide text-slate-400">
+        {label}
+      </div>
+    </div>
   );
 }

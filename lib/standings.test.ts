@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   computeStandings,
+  computeTieWins,
   rankStandings,
   tournamentOutcome,
 } from "./standings";
@@ -193,5 +194,93 @@ describe("results-side ranking + tiebreak rules", () => {
     expect(out.allDone).toBe(false);
     expect(out.needsOnePoint).toBe(false);
     expect(out.champion).toBeNull();
+  });
+});
+
+describe("head-to-head ties won", () => {
+  const mk = (over: Partial<Match>): Match => ({
+    id: 0,
+    line_id: 1,
+    team_a_id: RED,
+    team_b_id: GREEN,
+    pair_a: null,
+    pair_b: null,
+    score_a: 0,
+    score_b: 0,
+    status: "completed",
+    court: null,
+    round: 1,
+    updated_at: "",
+    ...over,
+  });
+
+  /** A round of `lines` matches where team A takes `aWins` of them. */
+  const round = (
+    r: number,
+    a: number,
+    b: number,
+    aWins: number,
+    lines = 6,
+    status: Match["status"] = "completed"
+  ): Match[] =>
+    Array.from({ length: lines }, (_, i) =>
+      mk({
+        id: r * 100 + i,
+        round: r,
+        line_id: i + 1,
+        team_a_id: a,
+        team_b_id: b,
+        status,
+        score_a: i < aWins ? 6 : 4,
+        score_b: i < aWins ? 4 : 6,
+      })
+    );
+
+  it("awards the tie to whoever wins more line matches (4-2 => one tie)", () => {
+    const wins = computeTieWins(round(1, RED, GREEN, 4));
+    expect(wins.get(RED)).toBe(1);
+    expect(wins.get(GREEN)).toBeUndefined();
+  });
+
+  it("awards nothing for a drawn round", () => {
+    const wins = computeTieWins(round(1, RED, GREEN, 3));
+    expect(wins.get(RED)).toBeUndefined();
+    expect(wins.get(GREEN)).toBeUndefined();
+  });
+
+  it("counts one tie per round across the whole round-robin", () => {
+    const wins = computeTieWins([
+      ...round(1, RED, GREEN, 4), // Red takes it
+      ...round(2, RED, YELLOW, 2), // Yellow takes it
+      ...round(3, GREEN, YELLOW, 5), // Green takes it
+    ]);
+    expect(wins.get(RED)).toBe(1);
+    expect(wins.get(GREEN)).toBe(1);
+    expect(wins.get(YELLOW)).toBe(1);
+  });
+
+  it("withholds the tie until every match in the round is final", () => {
+    const matches = round(1, RED, GREEN, 4);
+    matches[5] = { ...matches[5], status: "in_progress" };
+    expect(computeTieWins(matches).get(RED)).toBeUndefined();
+  });
+
+  it("surfaces on the standings rows", () => {
+    const rows = computeStandings(teams, [
+      ...round(1, RED, GREEN, 5),
+      ...round(2, RED, YELLOW, 4),
+    ]);
+    const byName = new Map(rows.map((r) => [r.team.name, r]));
+    expect(byName.get("Red")!.tiesWon).toBe(2);
+    expect(byName.get("Green")!.tiesWon).toBe(0);
+    expect(byName.get("Yellow")!.tiesWon).toBe(0);
+  });
+
+  it("ignores a round that somehow involves more than two teams", () => {
+    const odd = [
+      mk({ id: 1, round: 9, team_a_id: RED, team_b_id: GREEN, score_a: 6, score_b: 4 }),
+      mk({ id: 2, round: 9, team_a_id: RED, team_b_id: YELLOW, score_a: 6, score_b: 4 }),
+    ];
+    expect(computeTieWins(odd).size).toBe(0);
   });
 });

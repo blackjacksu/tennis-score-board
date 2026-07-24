@@ -5,7 +5,9 @@
 //   49 sign-ups − 2 dropouts (Jady Tsao, Dylon Lo) = 47 players.
 //   3 teams (Red / Green / Yellow) × 8 lines = 24 doubles pairs,
 //   round-robin ties (Red-Green, Red-Yellow, Green-Yellow) => 24 matches.
-//   Team combined-NTRP totals: Red 52.5 · Green 52.0 · Yellow 52.0 (balanced).
+//   Team combined-NTRP totals: Red 52.5 · Green 50.0 · Yellow 54.0. NOT balanced
+//   — the requested transfers between Green and Yellow left Yellow 4 points
+//   stronger than Green, so their line-vs-line matchups are uneven.
 //   24 pairs need 48 slots but there are 47 players, so ONE player doubles up:
 //   Willy Su (蘇亭瑋) plays Red's Line 1 AND Line 3 (≈4 matches instead of 2).
 //   吳杏玫 seeded at NTRP 2.5 (no rating on the form); 鄧之彬 at 4.0 as registered.
@@ -24,9 +26,9 @@ export const demoLines: Line[] = [
   { id: 2, label: "Line 2", ntrp: "8.0", sort_order: 2 },
   { id: 3, label: "Line 3", ntrp: "7.0–7.5", sort_order: 3 },
   { id: 4, label: "Line 4", ntrp: "6.5–7.0", sort_order: 4 },
-  { id: 5, label: "Line 5", ntrp: "6.5", sort_order: 5 },
-  { id: 6, label: "Line 6", ntrp: "6.0", sort_order: 6 },
-  { id: 7, label: "Line 7", ntrp: "5.0–5.5", sort_order: 7 },
+  { id: 5, label: "Line 5", ntrp: "6.0–7.0", sort_order: 5 },
+  { id: 6, label: "Line 6", ntrp: "5.5–6.5", sort_order: 6 },
+  { id: 7, label: "Line 7", ntrp: "5.0–6.0", sort_order: 7 },
   { id: 8, label: "Line 8", ntrp: "3.0–4.5", sort_order: 8 },
 ];
 
@@ -57,12 +59,12 @@ const rawRoster: Record<
     captain: "Ben Chen",
     pairs: [
       [{ name: "Andrew Liao", ntrp: 4.5 }, { name: "Fred Lin", ntrp: 4.5 }],
-      [{ name: "Hung-Ying Lin", ntrp: 4.0 }, { name: "Vincent Tseng", ntrp: 4.0 }],
-      [{ name: "Theo Pai", ntrp: 3.5 }, { name: "Christine Lin", ntrp: 3.5 }],
-      [{ name: "Peichun Su", ntrp: 3.5 }, { name: "Alice Liu", ntrp: 3.5 }],
+      [{ name: "鄧之彬", ntrp: 4.0 }, { name: "Ronald Feng", ntrp: 4.0 }],
+      [{ name: "Peichun Su", ntrp: 3.5 }, { name: "Thomas Yan", ntrp: 3.5 }],
       [{ name: "Ben Chen", ntrp: 3.5 }, { name: "Janice Chen", ntrp: 3.0 }],
       [{ name: "Daniel Tiedemann", ntrp: 3.0 }, { name: "Chih-Yu Lee", ntrp: 3.0 }],
-      [{ name: "Andy Lu", ntrp: 3.0 }, { name: "Zane Shao", ntrp: 2.5 }],
+      [{ name: "Andy Lu", ntrp: 3.0 }, { name: "Martin Hsieh", ntrp: 2.5 }],
+      [{ name: "Zane Shao", ntrp: 2.5 }, { name: "Cody", ntrp: 2.5 }],
       [{ name: "Margot Lai", ntrp: 1.5 }, { name: "Grace Shih", ntrp: 1.5 }],
     ],
   },
@@ -70,12 +72,12 @@ const rawRoster: Record<
     captain: "Yu Cheng",
     pairs: [
       [{ name: "Ching-Yen Shih", ntrp: 4.0 }, { name: "Yu Cheng", ntrp: 4.0 }],
-      [{ name: "鄧之彬", ntrp: 4.0 }, { name: "Ronald Feng", ntrp: 4.0 }],
+      [{ name: "Hung-Ying Lin", ntrp: 4.0 }, { name: "Vincent Tseng", ntrp: 4.0 }],
+      [{ name: "Theo Pai", ntrp: 3.5 }, { name: "Christine Lin", ntrp: 3.5 }],
       [{ name: "Nate Raughley", ntrp: 3.5 }, { name: "Ramon Mangaser", ntrp: 3.5 }],
-      [{ name: "Thomas Yan", ntrp: 3.5 }, { name: "Andy Y.", ntrp: 3.5 }],
+      [{ name: "Alice Liu", ntrp: 3.5 }, { name: "Andy Y.", ntrp: 3.5 }],
       [{ name: "Shih-Yen Pan", ntrp: 3.5 }, { name: "Tony Peng", ntrp: 3.0 }],
       [{ name: "Faye Chang", ntrp: 3.0 }, { name: "David Fang", ntrp: 3.0 }],
-      [{ name: "Martin Hsieh", ntrp: 2.5 }, { name: "Cody", ntrp: 2.5 }],
       [{ name: "吳杏玫", ntrp: 2.5 }, { name: "李佩安", ntrp: 2.0 }],
     ],
   },

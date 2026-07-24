@@ -65,6 +65,10 @@ const dictionaries = {
     courtNeedsStart: "開始比賽後才會出現在場地圖",
     invalidScore: "請輸入 0–7（7 僅限 7-5 或 7-6）",
     scoreHint: "可直接輸入比分",
+    tiesWon: "團體勝",
+    timetable: "賽程時間表",
+    eventDay: "週六",
+    allCourts: "全部 {n} 場地",
   },
   en: {
     appTitle: "TAA Tennis Team Tournament",
@@ -122,6 +126,10 @@ const dictionaries = {
     courtNeedsStart: "Shows on the court map once the match starts",
     invalidScore: "Enter 0–7 (a 7 only as 7-5 or 7-6)",
     scoreHint: "Type a score directly",
+    tiesWon: "Ties",
+    timetable: "Timetable",
+    eventDay: "Sat",
+    allCourts: "All {n} courts",
   },
 } as const;
 

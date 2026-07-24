@@ -12,11 +12,54 @@ export type StandingRow = {
   matchesWon: number;
   gamesWon: number;
   played: number; // completed matches this team has appeared in
+  tiesWon: number; // head-to-head rounds won outright (e.g. beating a team 5-3)
 };
+
+/**
+ * Head-to-head ties won, keyed by team id. Each round is one tie between two
+ * teams; whoever takes more of that round's line matches wins the tie — so
+ * Red beating Green 5-3 across the round scores Red one tie.
+ *
+ * Only awarded once every match in the round is final, so a round still in
+ * progress never hands out a tie it might not end up deserving. A drawn round
+ * (4-4) counts for neither side.
+ */
+export function computeTieWins(matches: Match[]): Map<number, number> {
+  const byRound = new Map<number, Match[]>();
+  for (const m of matches) {
+    const list = byRound.get(m.round);
+    if (list) list.push(m);
+    else byRound.set(m.round, [m]);
+  }
+
+  const tiesWon = new Map<number, number>();
+  for (const list of byRound.values()) {
+    if (!list.every((m) => m.status === "completed")) continue;
+
+    const teamIds = [...new Set(list.flatMap((m) => [m.team_a_id, m.team_b_id]))];
+    if (teamIds.length !== 2) continue; // not a straight two-team tie
+
+    const [x, y] = teamIds;
+    let xWins = 0;
+    let yWins = 0;
+    for (const m of list) {
+      if (m.score_a === m.score_b) continue; // drawn line, counts for neither
+      const winner = m.score_a > m.score_b ? m.team_a_id : m.team_b_id;
+      if (winner === x) xWins += 1;
+      else if (winner === y) yWins += 1;
+    }
+
+    if (xWins === yWins) continue; // drawn tie
+    const winner = xWins > yWins ? x : y;
+    tiesWon.set(winner, (tiesWon.get(winner) ?? 0) + 1);
+  }
+  return tiesWon;
+}
 
 /** Per-team matches won and games won. Games count once a match has started;
  *  matches won and "played" count only completed matches. */
 export function computeStandings(teams: Team[], matches: Match[]): StandingRow[] {
+  const tieWins = computeTieWins(matches);
   return teams.map((team) => {
     let matchesWon = 0;
     let gamesWon = 0;
@@ -33,7 +76,13 @@ export function computeStandings(teams: Team[], matches: Match[]): StandingRow[]
         if (own > opp) matchesWon += 1;
       }
     }
-    return { team, matchesWon, gamesWon, played };
+    return {
+      team,
+      matchesWon,
+      gamesWon,
+      played,
+      tiesWon: tieWins.get(team.id) ?? 0,
+    };
   });
 }
 

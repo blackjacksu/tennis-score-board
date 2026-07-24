@@ -4,6 +4,7 @@ import { useI18n } from "@/lib/i18n";
 import type { Line, Match, Team } from "@/lib/types";
 import MatchCard from "./MatchCard";
 import ResultsSidebar from "./ResultsSidebar";
+import Timetable from "./Timetable";
 
 export default function ScoresView({
   teams,
@@ -25,6 +26,11 @@ export default function ScoresView({
   return (
     <div className="flex flex-col gap-6">
       <ResultsSidebar teams={teams} matches={matches} />
+      <Timetable
+        matches={matches}
+        teamById={teamById}
+        lineById={lineById}
+      />
       <div className="min-w-0 flex-1 space-y-6">
         {rounds.map((round) => {
           const roundMatches = matches
