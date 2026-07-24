@@ -59,6 +59,12 @@ const dictionaries = {
     captain: "隊長",
     teamNtrp: "隊伍總分",
     playerCount: "{n} 位選手",
+    courtTbd: "未排場地",
+    courtRange: "場地請填 {min}–{max}，留空表示未排",
+    courtTaken: "場地 {n} 已有其他進行中的比賽",
+    courtNeedsStart: "開始比賽後才會出現在場地圖",
+    invalidScore: "請輸入 0–7（7 僅限 7-5 或 7-6）",
+    scoreHint: "可直接輸入比分",
   },
   en: {
     appTitle: "TAA Tennis Team Tournament",
@@ -110,6 +116,12 @@ const dictionaries = {
     captain: "Captain",
     teamNtrp: "Team NTRP",
     playerCount: "{n} players",
+    courtTbd: "No court",
+    courtRange: "Court {min}–{max}, or blank for none",
+    courtTaken: "Court {n} already has a live match",
+    courtNeedsStart: "Shows on the court map once the match starts",
+    invalidScore: "Enter 0–7 (a 7 only as 7-5 or 7-6)",
+    scoreHint: "Type a score directly",
   },
 } as const;
 

@@ -1,10 +1,11 @@
 "use client";
 
+import { COURT_NUMBERS, courtNumber } from "@/lib/court";
 import { useI18n } from "@/lib/i18n";
 import type { Line, Match, Team } from "@/lib/types";
 
-// Fixed physical layout: six courts in one row, spectator stand between 3 and 4.
-const COURT_NUMBERS = [1, 2, 3, 4, 5, 6];
+// Fixed physical layout: six courts in one row (COURT_NUMBERS), spectator
+// stand between 3 and 4.
 
 // Translucent version of a team color, for washing each side of the court.
 function tint(hex: string | undefined, alpha: number): string {
@@ -30,9 +31,9 @@ export default function CourtView({
   // Map each physical court to the match currently being played on it.
   const matchByCourt = new Map<number, Match>();
   for (const m of matches) {
-    if (m.status !== "in_progress" || !m.court) continue;
-    const n = Number(m.court);
-    if (COURT_NUMBERS.includes(n) && !matchByCourt.has(n)) {
+    if (m.status !== "in_progress") continue;
+    const n = courtNumber(m.court);
+    if (n != null && !matchByCourt.has(n)) {
       matchByCourt.set(n, m);
     }
   }
