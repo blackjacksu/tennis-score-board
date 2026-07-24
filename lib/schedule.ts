@@ -78,6 +78,22 @@ function pairKeys(m: Match): [string, string] {
 
 type Tie = { round: number; teams: number[]; matches: Match[] };
 
+/**
+ * The team that anchors the courts: in the canonical three-team round robin it
+ * is the one team absent from the earliest tie, so it then plays the remaining
+ * two ties back to back and can stay on court the whole event. Derived from the
+ * fixture — not a fixed id — so the schedule holds up whatever ids the database
+ * assigned the teams (a re-seed can move them off 1/2/3). Returns null for
+ * anything that isn't three two-team ties, leaving buildTimetable to fall back.
+ */
+function deriveAnchorTeamId(ties: Tie[]): number | null {
+  if (ties.length !== 3 || !ties.every((t) => t.teams.length === 2)) return null;
+  const firstTie = new Set(ties[0].teams); // ties are sorted by round
+  const everyTeam = [...new Set(ties.flatMap((t) => t.teams))];
+  const absentFromFirst = everyTeam.filter((id) => !firstTie.has(id));
+  return absentFromFirst.length === 1 ? absentFromFirst[0] : null;
+}
+
 function groupTies(matches: Match[]): Tie[] {
   const byRound = new Map<number, Match[]>();
   for (const m of matches) {
@@ -115,8 +131,9 @@ export function buildTimetable(
 ): TimetableSlot[] {
   if (matches.length === 0) return [];
 
-  const anchorId = opts.anchorTeamId ?? ANCHOR_TEAM_ID;
   const ties = groupTies(matches);
+  const anchorId =
+    opts.anchorTeamId ?? deriveAnchorTeamId(ties) ?? ANCHOR_TEAM_ID;
   const anchorTies = ties.filter(
     (t) => t.teams.length === 2 && t.teams.includes(anchorId)
   );
