@@ -8,7 +8,9 @@
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
-    "gen:signin": "node scripts/gen-signin.mjs"
+    "gen:signin": "node scripts/print/gen-signin.mjs",
+    "gen:poster": "node scripts/print/gen-poster.mjs",
+    "gen:print": "npm run gen:signin && npm run gen:poster"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.0",

@@ -52,6 +52,23 @@ Open http://localhost:3000 (viewer) and http://localhost:3000/admin (admin, ente
 - Each match is a single 6-game set (won 6-0…6-4, 7-5, or 7-6); the admin rejects any other score
 - Lines live in the `lines` table — relabel them in Supabase anytime without touching code
 
+## Printable materials
+
+`scripts/print/` generates print-ready PDFs straight from `lib/demoData.ts` — the
+same roster the Teams view reads. Whenever the roster changes, re-run the
+generators and the PDFs update to match; nothing is hand-edited.
+
+```bash
+npm run gen:signin  # signin-sheet.pdf   — one page per team, check-in + signature
+npm run gen:poster  # schedule-poster.pdf — 18×24in portrait wall poster: team format + full schedule
+npm run gen:print   # both
+```
+
+Both scripts need a Unicode/CJK font on the machine to render Chinese names
+(they auto-detect common macOS/Linux fonts; set `FONT_PATH=/path/to/font.ttf`
+if none are found). Output files are gitignored — regenerate them locally or
+in CI rather than committing the PDFs.
+
 ## Customizing
 
 | What | Where |

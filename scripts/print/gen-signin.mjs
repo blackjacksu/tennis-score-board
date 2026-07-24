@@ -2,58 +2,26 @@
 // player with their line, doubles partner, NTRP, a check-in box and a signature
 // line. Reads the roster straight from lib/demoData.ts (single source of truth).
 //
-//   node scripts/gen-signin.mjs [outfile.pdf]
+//   node scripts/print/gen-signin.mjs [outfile.pdf]
 //
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
-import { PDFDocument, rgb } from "pdf-lib";
-import fontkit from "@pdf-lib/fontkit";
-import { demoRoster, demoTeams } from "../lib/demoData.ts";
+import { demoRoster, demoTeams } from "../../lib/demoData.ts";
+import { createDoc, hex, readableText, pageDrawer } from "./pdfKit.mjs";
+import { EVENT_DATE } from "./config.mjs";
 
 const __dir = dirname(fileURLToPath(import.meta.url));
 const outPath = resolve(
   __dir,
   "..",
+  "..",
   process.argv[2] ?? "signin-sheet.pdf"
 );
-// Full-Unicode font so Chinese names (e.g. 楊之安) render correctly. Override
-// with FONT_PATH=/path/to/font.ttf if none of these exist on your system.
-const FONT_CANDIDATES = [
-  process.env.FONT_PATH,
-  "/System/Library/Fonts/Supplemental/Arial Unicode.ttf",
-  "/Library/Fonts/Arial Unicode.ttf",
-  "/System/Library/Fonts/PingFang.ttc",
-  "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-].filter(Boolean);
-const FONT_PATH = FONT_CANDIDATES.find((p) => existsSync(p));
-if (!FONT_PATH) {
-  console.error(
-    "No Unicode/CJK font found. Set FONT_PATH=/path/to/font.ttf and re-run."
-  );
-  process.exit(1);
-}
-const EVENT_DATE = "2026-07-23";
 
 const PAGE_W = 612;
 const PAGE_H = 792;
 const M = 40;
-
-function hex(h) {
-  const c = h.replace("#", "");
-  return rgb(
-    parseInt(c.slice(0, 2), 16) / 255,
-    parseInt(c.slice(2, 4), 16) / 255,
-    parseInt(c.slice(4, 6), 16) / 255
-  );
-}
-// Dark text on light banners (yellow), white on dark ones.
-function readableText(h) {
-  const c = h.replace("#", "");
-  const [r, g, b] = [0, 2, 4].map((i) => parseInt(c.slice(i, i + 2), 16));
-  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return lum > 0.6 ? hex("#1c1917") : rgb(1, 1, 1);
-}
 
 const COLS = {
   line: { x: 40, w: 56 },
@@ -64,10 +32,7 @@ const COLS = {
   sign: { x: 486, w: 86 },
 };
 
-const doc = await PDFDocument.create();
-doc.registerFontkit(fontkit);
-const font = doc.embedFont(readFileSync(FONT_PATH), { subset: true });
-const F = await font;
+const { doc, font: F } = await createDoc();
 
 // y is measured from the top of the page for readability.
 const yb = (top) => PAGE_H - top;
@@ -78,13 +43,7 @@ for (const team of demoTeams) {
   const page = doc.addPage([PAGE_W, PAGE_H]);
   const color = hex(team.color);
 
-  const text = (s, { x, top, size = 10, c = hex("#1c1917"), bold = false }) => {
-    page.drawText(s, { x, y: yb(top), size, font: F, color: c });
-    if (bold) page.drawText(s, { x: x + 0.35, y: yb(top), size, font: F, color: c });
-  };
-  const w = (s, size) => F.widthOfTextAtSize(s, size);
-  const centered = (s, col, top, o = {}) =>
-    text(s, { x: col.x + (col.w - w(s, o.size ?? 10)) / 2, top, ...o });
+  const { text, w, centered } = pageDrawer(page, F, PAGE_H);
 
   // Header
   text("TAA Tennis Team Tournament", { x: M, top: 52, size: 15, bold: true });

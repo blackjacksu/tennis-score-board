@@ -33,7 +33,7 @@ export default function ResultsSidebar({
         </span>
       </div>
 
-      <ol className="space-y-2">
+      <ol className="grid gap-2 sm:grid-cols-3">
         {ranked.map((row, i) => {
           const isChamp = champion?.team.id === row.team.id;
           const isTiedLeader = needsOnePoint && tiedLeaders.includes(row);

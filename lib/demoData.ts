@@ -41,7 +41,7 @@ const rawRoster: Record<
   { captain: string; pairs: [RawPlayer, RawPlayer][] }
 > = {
   1: {
-    captain: "Richard Lin",
+    captain: "Willy Su",
     pairs: [
       [{ name: "Richard Lin", ntrp: 4.5 }, { name: "Willy Su", ntrp: 4.0 }],
       [{ name: "Kevin Chiang", ntrp: 4.0 }, { name: "Yi-Chih Wang", ntrp: 4.0 }],
@@ -54,26 +54,26 @@ const rawRoster: Record<
     ],
   },
   2: {
-    captain: "Andrew Liao",
+    captain: "Ben Chen",
     pairs: [
       [{ name: "Andrew Liao", ntrp: 4.5 }, { name: "Fred Lin", ntrp: 4.5 }],
       [{ name: "Hung-Ying Lin", ntrp: 4.0 }, { name: "Vincent Tseng", ntrp: 4.0 }],
       [{ name: "Theo Pai", ntrp: 3.5 }, { name: "Christine Lin", ntrp: 3.5 }],
       [{ name: "Peichun Su", ntrp: 3.5 }, { name: "Alice Liu", ntrp: 3.5 }],
-      [{ name: "Shih-Yen Pan", ntrp: 3.5 }, { name: "Janice Chen", ntrp: 3.0 }],
+      [{ name: "Ben Chen", ntrp: 3.5 }, { name: "Janice Chen", ntrp: 3.0 }],
       [{ name: "Daniel Tiedemann", ntrp: 3.0 }, { name: "Chih-Yu Lee", ntrp: 3.0 }],
       [{ name: "Andy Lu", ntrp: 3.0 }, { name: "Zane Shao", ntrp: 2.5 }],
       [{ name: "Margot Lai", ntrp: 1.5 }, { name: "Grace Shih", ntrp: 1.5 }],
     ],
   },
   3: {
-    captain: "Ching-Yen Shih",
+    captain: "Yu Cheng",
     pairs: [
       [{ name: "Ching-Yen Shih", ntrp: 4.0 }, { name: "Yu Cheng", ntrp: 4.0 }],
       [{ name: "鄧之彬", ntrp: 4.0 }, { name: "Ronald Feng", ntrp: 4.0 }],
       [{ name: "Nate Raughley", ntrp: 3.5 }, { name: "Ramon Mangaser", ntrp: 3.5 }],
       [{ name: "Thomas Yan", ntrp: 3.5 }, { name: "Andy Y.", ntrp: 3.5 }],
-      [{ name: "Ben Chen", ntrp: 3.5 }, { name: "Tony Peng", ntrp: 3.0 }],
+      [{ name: "Shih-Yen Pan", ntrp: 3.5 }, { name: "Tony Peng", ntrp: 3.0 }],
       [{ name: "Faye Chang", ntrp: 3.0 }, { name: "David Fang", ntrp: 3.0 }],
       [{ name: "Martin Hsieh", ntrp: 2.5 }, { name: "Cody", ntrp: 2.5 }],
       [{ name: "吳杏玫", ntrp: 2.5 }, { name: "李佩安", ntrp: 2.0 }],

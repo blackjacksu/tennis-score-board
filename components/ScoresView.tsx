@@ -23,10 +23,8 @@ export default function ScoresView({
   );
 
   return (
-    <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-      <aside className="lg:order-last lg:w-72 lg:shrink-0 lg:sticky lg:top-4">
-        <ResultsSidebar teams={teams} matches={matches} />
-      </aside>
+    <div className="flex flex-col gap-6">
+      <ResultsSidebar teams={teams} matches={matches} />
       <div className="min-w-0 flex-1 space-y-6">
         {rounds.map((round) => {
           const roundMatches = matches
@@ -51,7 +49,7 @@ export default function ScoresView({
                 </span>
                 <span className="text-base font-bold">{tieLabel}</span>
               </h2>
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 {roundMatches.map((m) => (
                   <MatchCard
                     key={m.id}

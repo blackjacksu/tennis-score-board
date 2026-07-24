@@ -12,8 +12,9 @@
 .DS_Store
 *.pem
 
-# generated documents (run `npm run gen:signin`)
+# generated documents (run `npm run gen:print` — see scripts/print/)
 /signin-sheet.pdf
+/schedule-poster.pdf
 
 # debug
 npm-debug.log*
