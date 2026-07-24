@@ -138,18 +138,6 @@ const urlTop = cardTop + CARD + 34;
 const urlSize = fitSize(url, PAGE_W - 120, { max: 15, min: 8 });
 centered(url, { top: urlTop, size: urlSize, c: hex("#334155") });
 
-// Instructions
-centered("Point your phone camera at the code — no app needed.", {
-  top: urlTop + 30,
-  size: 12,
-  c: muted,
-});
-centered("用手機相機對準即可掃描，免安裝 App。", {
-  top: urlTop + 50,
-  size: 12,
-  c: muted,
-});
-
 centered(`${EVENT_NAME}  ·  ${EVENT_DATE}`, {
   top: PAGE_H - 44,
   size: 9,

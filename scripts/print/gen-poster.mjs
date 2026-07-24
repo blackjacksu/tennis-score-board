@@ -286,10 +286,6 @@ if (contentBottom > PAGE_H - M) {
   );
 }
 
-// ---------------------------------------------------------------- Footer ---
-const footer = "Auto-generated from lib/demoData.ts — regenerate with `npm run gen:poster` after any roster change.";
-text(footer, { x: M, top: PAGE_H - M + 20, size: 9, c: hex("#cbd5e1") });
-
 const bytes = await doc.save();
 writeFileSync(outPath, bytes);
 console.log(`Wrote ${outPath} (${PAGE_W / 72}×${PAGE_H / 72}in, ${bytes.length} bytes)`);

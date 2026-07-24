@@ -23,13 +23,16 @@ const PAGE_W = 612;
 const PAGE_H = 792;
 const M = 40;
 
+// Columns span the content width (40 … 572). Player/partner give a little room
+// back to fit the cash-fee tick box between check-in and the signature line.
 const COLS = {
-  line: { x: 40, w: 56 },
-  player: { x: 96, w: 150 },
-  ntrp: { x: 246, w: 46 },
-  partner: { x: 292, w: 150 },
-  check: { x: 442, w: 44 },
-  sign: { x: 486, w: 86 },
+  line: { x: 40, w: 46 },
+  player: { x: 86, w: 134 },
+  ntrp: { x: 220, w: 34 },
+  partner: { x: 254, w: 134 },
+  check: { x: 388, w: 46 },
+  fee: { x: 434, w: 54 },
+  sign: { x: 488, w: 84 },
 };
 
 const { doc, font: F } = await createDoc();
@@ -102,6 +105,7 @@ for (const team of demoTeams) {
   centered("NTRP", COLS.ntrp, headBase, { size: 9, bold: true, c: hex("#475569") });
   text("Doubles partner", { x: COLS.partner.x + 6, top: headBase, size: 9, bold: true, c: hex("#475569") });
   centered("Check-in", COLS.check, headBase, { size: 9, bold: true, c: hex("#475569") });
+  centered("Cash fee", COLS.fee, headBase, { size: 9, bold: true, c: hex("#475569") });
   text("Signature", { x: COLS.sign.x + 6, top: headBase, size: 9, bold: true, c: hex("#475569") });
 
   // Rows: two players per line
@@ -172,16 +176,20 @@ for (const team of demoTeams) {
       centered(pl.ntrp.toFixed(1), COLS.ntrp, base, { size: 10, c: hex("#475569") });
       text(partner, { x: COLS.partner.x + 6, top: base, size: 10, c: hex("#334155") });
 
-      // Check-in box
+      // Check-in box, and a matching cash-fee box staff tick when the player
+      // pays their registration fee in cash.
       const boxSize = 15;
-      page.drawRectangle({
-        x: COLS.check.x + (COLS.check.w - boxSize) / 2,
-        y: yb(rowTop + rowH / 2 + boxSize / 2),
-        width: boxSize,
-        height: boxSize,
-        borderColor: hex("#94a3b8"),
-        borderWidth: 1.2,
-      });
+      const boxTop = yb(rowTop + rowH / 2 + boxSize / 2);
+      for (const col of [COLS.check, COLS.fee]) {
+        page.drawRectangle({
+          x: col.x + (col.w - boxSize) / 2,
+          y: boxTop,
+          width: boxSize,
+          height: boxSize,
+          borderColor: hex("#94a3b8"),
+          borderWidth: 1.2,
+        });
+      }
       // Signature line
       page.drawLine({
         start: { x: COLS.sign.x + 4, y: yb(rowTop + rowH - 8) },
@@ -205,7 +213,7 @@ for (const team of demoTeams) {
 
   // Footer
   text(
-    "Tick the box and sign when the player arrives.  (C) = Team Captain.",
+    "Tick Check-in on arrival and Cash fee once the registration fee is paid, then sign.  (C) = Team Captain.",
     { x: M, top: tableBottom + 24, size: 8, c: hex("#94a3b8") }
   );
   const pageLabel = `${team.name} Team`;
