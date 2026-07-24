@@ -8,6 +8,7 @@
     "start": "next start",
     "test": "vitest run",
     "test:watch": "vitest",
+    "gen:seed": "node scripts/gen-seed.mjs",
     "gen:signin": "node scripts/print/gen-signin.mjs",
     "gen:poster": "node scripts/print/gen-poster.mjs",
     "gen:qr": "node scripts/print/gen-qr.mjs",

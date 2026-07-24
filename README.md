@@ -69,6 +69,20 @@ Both scripts need a Unicode/CJK font on the machine to render Chinese names
 if none are found). Output files are gitignored — regenerate them locally or
 in CI rather than committing the PDFs.
 
+## Database seed
+
+`supabase/seed.sql` and `supabase/players_import.sql` are **generated** from the
+same `lib/demoData.ts` roster — never hand-edit them:
+
+```bash
+npm run gen:seed    # rewrites both files from lib/demoData.ts
+```
+
+Change the roster in `demoData.ts`, run `gen:seed`, then paste the two files into
+the Supabase SQL Editor (after `schema.sql`). This keeps the live database, the
+Teams view, and the printed materials all reading from one source, so a change
+like moving a player can't land in one place but not another.
+
 ## Customizing
 
 | What | Where |
