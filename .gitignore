@@ -15,6 +15,7 @@
 # generated documents (run `npm run gen:print` — see scripts/print/)
 /signin-sheet.pdf
 /schedule-poster.pdf
+/qr-scoreboard.pdf
 
 # debug
 npm-debug.log*

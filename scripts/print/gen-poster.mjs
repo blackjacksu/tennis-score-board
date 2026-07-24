@@ -73,6 +73,14 @@ for (const r of rounds) {
   );
 }
 
+// Same idea one level up: the tie that takes court first is printed first. With
+// Yellow anchoring the schedule its two ties open the day, so they head the
+// poster and the backfilled tie follows — read the page down, watch the day in
+// that order. Round number breaks ties that start together.
+const firstOrder = (r) =>
+  Math.min(...r.matches.map((m) => orderByMatch.get(m.id) ?? Infinity));
+rounds.sort((a, b) => firstOrder(a) - firstOrder(b) || a.round - b.round);
+
 const { doc, font: F } = await createDoc();
 const page = doc.addPage([PAGE_W, PAGE_H]);
 const { text, w, right, centered, fitSize } = pageDrawer(page, F, PAGE_H);
