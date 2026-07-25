@@ -18,8 +18,8 @@ from (values
   ('Red'   , 'Tim Chen'        , 3.0),  -- Line 5
   ('Red'   , 'Chris Lin'       , 3.0),  -- Line 6
   ('Red'   , 'Joshua Lee'      , 3.0),  -- Line 6
-  ('Red'   , 'Andy Chen'       , 2.5),  -- Line 7
-  ('Red'   , 'Avery Hsieh'     , 2.5),  -- Line 7
+  ('Red'   , 'David Fang'      , 3.0),  -- Line 7
+  ('Red'   , 'Cody'            , 2.5),  -- Line 7
   ('Red'   , 'Margot Lai'      , 1.5),  -- Line 8
   ('Red'   , 'Grace Shih'      , 1.5),  -- Line 8
   -- ===== GREEN (綠隊) — captain Ben Chen =====
@@ -31,12 +31,12 @@ from (values
   ('Green' , 'Thomas Yan'      , 3.5),  -- Line 3
   ('Green' , 'Alice Liu'       , 3.5),  -- Line 4
   ('Green' , 'Andy Chung'      , 3.5),  -- Line 4
-  ('Green' , 'Ben Chen'        , 3.5),  -- Line 5
-  ('Green' , 'Tony Peng'       , 3.0),  -- Line 5
-  ('Green' , 'Andy Lu'         , 3.0),  -- Line 6
-  ('Green' , 'Zane Shao'       , 2.5),  -- Line 6
-  ('Green' , 'David Fang'      , 3.0),  -- Line 7
-  ('Green' , 'Cody'            , 2.5),  -- Line 7
+  ('Green' , 'Faye Chang'      , 3.0),  -- Line 5
+  ('Green' , '吳杏玫'          , 3.5),  -- Line 5
+  ('Green' , 'Ben Chen'        , 3.5),  -- Line 6
+  ('Green' , 'Tony Peng'       , 3.0),  -- Line 6
+  ('Green' , 'Andy Chen'       , 2.5),  -- Line 7
+  ('Green' , 'Avery Hsieh'     , 2.5),  -- Line 7
   ('Green' , 'Julie Hsieh'     , 2.5),  -- Line 8
   ('Green' , 'Jerry Chiu'      , 2.0),  -- Line 8
   -- ===== YELLOW (黃隊) — captain Yu Cheng =====
@@ -52,8 +52,8 @@ from (values
   ('Yellow', 'Janice Chen'     , 3.0),  -- Line 5
   ('Yellow', 'Daniel Tiedemann', 3.0),  -- Line 6
   ('Yellow', 'Chih-Yu Lee'     , 3.0),  -- Line 6
-  ('Yellow', 'Faye Chang'      , 3.0),  -- Line 7
-  ('Yellow', '吳杏玫'          , 2.5),  -- Line 7
+  ('Yellow', 'Andy Lu'         , 3.0),  -- Line 7
+  ('Yellow', 'Zane Shao'       , 2.5),  -- Line 7
   ('Yellow', 'Martin Hsieh'    , 2.5),  -- Line 8
   ('Yellow', '李佩安'          , 2.0)  -- Line 8
 ) as v(team_name, name, ntrp)

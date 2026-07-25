@@ -7,7 +7,7 @@
 //   Mu-Ting Chien => 48 players, one per slot with nobody doubling up.
 //   3 teams (Red / Green / Yellow) × 8 lines = 24 doubles pairs,
 //   round-robin ties (Red-Green, Red-Yellow, Green-Yellow) => 24 matches.
-//   Team combined-NTRP totals: Red 50.5 · Green 53.0 · Yellow 52.5 — within 2.5
+//   Team combined-NTRP totals: Red 51.0 · Green 53.5 · Yellow 52.5 — within 2.5
 //   points, and the line-vs-line matchups are close (Line 2 all 8.0, Line 3 all
 //   7.0, Line 5 all 6.5). Line 8 is the outlier: Red 3.0 against 4.5 apiece.
 //   吳杏玫 seeded at NTRP 2.5 and Kosho Horage at 3.5 (neither has a rating on the
@@ -28,7 +28,7 @@ export const demoLines: Line[] = [
   { id: 3, label: "Line 3", ntrp: "7.0", sort_order: 3 },
   { id: 4, label: "Line 4", ntrp: "6.5–7.0", sort_order: 4 },
   { id: 5, label: "Line 5", ntrp: "6.5", sort_order: 5 },
-  { id: 6, label: "Line 6", ntrp: "5.5–6.0", sort_order: 6 },
+  { id: 6, label: "Line 6", ntrp: "6.0–6.5", sort_order: 6 },
   { id: 7, label: "Line 7", ntrp: "5.0–5.5", sort_order: 7 },
   { id: 8, label: "Line 8", ntrp: "3.0–4.5", sort_order: 8 },
 ];
@@ -51,7 +51,7 @@ const rawRoster: Record<
       [{ name: "Wendy Wang", ntrp: 3.0 }, { name: "楊之安", ntrp: 3.5 }],
       [{ name: "Derrick Chueh", ntrp: 3.5 }, { name: "Tim Chen", ntrp: 3.0 }],
       [{ name: "Chris Lin", ntrp: 3.0 }, { name: "Joshua Lee", ntrp: 3.0 }],
-      [{ name: "Andy Chen", ntrp: 2.5 }, { name: "Avery Hsieh", ntrp: 2.5 }],
+      [{ name: "David Fang", ntrp: 3.0 }, { name: "Cody", ntrp: 2.5 }],
       [{ name: "Margot Lai", ntrp: 1.5 }, { name: "Grace Shih", ntrp: 1.5 }],
     ],
   },
@@ -62,9 +62,9 @@ const rawRoster: Record<
       [{ name: "鄧之彬", ntrp: 4.0 }, { name: "Ronald Feng", ntrp: 4.0 }],
       [{ name: "Peichun Su", ntrp: 3.5 }, { name: "Thomas Yan", ntrp: 3.5 }],
       [{ name: "Alice Liu", ntrp: 3.5 }, { name: "Andy Chung", ntrp: 3.5 }],
+      [{ name: "Faye Chang", ntrp: 3.0 }, { name: "吳杏玫", ntrp: 3.5 }],
       [{ name: "Ben Chen", ntrp: 3.5 }, { name: "Tony Peng", ntrp: 3.0 }],
-      [{ name: "Andy Lu", ntrp: 3.0 }, { name: "Zane Shao", ntrp: 2.5 }],
-      [{ name: "David Fang", ntrp: 3.0 }, { name: "Cody", ntrp: 2.5 }],
+      [{ name: "Andy Chen", ntrp: 2.5 }, { name: "Avery Hsieh", ntrp: 2.5 }],
       [{ name: "Julie Hsieh", ntrp: 2.5 }, { name: "Jerry Chiu", ntrp: 2.0 }],
     ],
   },
@@ -77,7 +77,7 @@ const rawRoster: Record<
       [{ name: "Nate Raughley", ntrp: 3.5 }, { name: "Ramon Mangaser", ntrp: 3.5 }],
       [{ name: "Shih-Yen Pan", ntrp: 3.5 }, { name: "Janice Chen", ntrp: 3.0 }],
       [{ name: "Daniel Tiedemann", ntrp: 3.0 }, { name: "Chih-Yu Lee", ntrp: 3.0 }],
-      [{ name: "Faye Chang", ntrp: 3.0 }, { name: "吳杏玫", ntrp: 2.5 }],
+      [{ name: "Andy Lu", ntrp: 3.0 }, { name: "Zane Shao", ntrp: 2.5 }],
       [{ name: "Martin Hsieh", ntrp: 2.5 }, { name: "李佩安", ntrp: 2.0 }],
     ],
   },

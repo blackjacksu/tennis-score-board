@@ -39,8 +39,8 @@ const lineById = new Map(demoLines.map((l) => [l.id, l]));
 const rosterByTeam = new Map(demoRoster.map((r) => [r.teamId, r]));
 
 // Rebuild the round-robin schedule (one tie per round) from the flat matches
-// list: group by round and keep each tie's team pair. Row order comes from the
-// timetable below, not the line number.
+// list: group by round and keep each tie's team pair. Rows are ordered by line
+// number below (highest first); start time and court come from the timetable.
 const roundsMap = new Map();
 for (const m of demoMatches) {
   if (!roundsMap.has(m.round)) {
@@ -50,36 +50,41 @@ for (const m of demoMatches) {
 }
 const rounds = [...roundsMap.values()].sort((a, b) => a.round - b.round);
 
-// Start time, court, and running order per match, from the same timetable the
-// live-score page renders, so the poster and the board can never disagree.
+// Start time and court per match, from the same timetable the live-score page
+// renders, so the poster and the board can never disagree on when/where a match
+// is played — only on the order the rows are listed.
 const startByMatch = new Map();
 const courtByMatch = new Map();
-const orderByMatch = new Map();
-let playOrder = 0;
 for (const slot of eventTimetable(demoMatches, lineById)) {
   for (const { match, court } of slot.matches) {
     startByMatch.set(match.id, slot.startMinutes);
     courtByMatch.set(match.id, court);
-    orderByMatch.set(match.id, playOrder++);
   }
 }
 
-// Rows read top-to-bottom in the order they are actually played — earliest
-// start first — rather than by line number, so the poster is a timetable you
-// can follow down the page.
+// Rows read by line number, highest first: Line 8 → 7 → … → 1, regardless of
+// start time. The manual schedule interleaves lines across time blocks, so the
+// Start column will not run in order down the page — that's expected here.
+const sortOrder = (m) => lineById.get(m.line_id)?.sort_order ?? 0;
 for (const r of rounds) {
-  r.matches.sort(
-    (a, b) => (orderByMatch.get(a.id) ?? 0) - (orderByMatch.get(b.id) ?? 0)
-  );
+  r.matches.sort((a, b) => sortOrder(b) - sortOrder(a));
 }
 
-// Same idea one level up: the tie that takes court first is printed first. With
-// Yellow anchoring the schedule its two ties open the day, so they head the
-// poster and the backfilled tie follows — read the page down, watch the day in
-// that order. Round number breaks ties that start together.
-const firstOrder = (r) =>
-  Math.min(...r.matches.map((m) => orderByMatch.get(m.id) ?? Infinity));
-rounds.sort((a, b) => firstOrder(a) - firstOrder(b) || a.round - b.round);
+// Fixed tie order (team ids: Red 1, Green 2, Yellow 3), independent of round
+// numbers and start times. Keeping the tables in the same place every print
+// means a reprinted poster can be diffed against the last one at a glance —
+// only the times/courts inside a table move, never the tables themselves.
+const TIE_ORDER = [
+  [1, 3], // Red vs Yellow
+  [2, 3], // Green vs Yellow
+  [1, 2], // Red vs Green
+];
+const tieRank = (r) => {
+  const teams = new Set([r.teamAId, r.teamBId]);
+  const i = TIE_ORDER.findIndex(([a, b]) => teams.has(a) && teams.has(b));
+  return i === -1 ? TIE_ORDER.length : i; // unknown ties fall to the end
+};
+rounds.sort((a, b) => tieRank(a) - tieRank(b) || a.round - b.round);
 
 const { doc, font: F } = await createDoc();
 const page = doc.addPage([PAGE_W, PAGE_H]);

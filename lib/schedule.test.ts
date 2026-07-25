@@ -145,16 +145,44 @@ describe("eventTimetable (manual event schedule)", () => {
     expect(new Set(ids).size).toBe(demoMatches.length);
   });
 
-  it("runs the four requested Green-Yellow lines (1,2,3,5) in the 10:35 block", () => {
-    const block = slots.find(
-      (s) => s.startMinutes === FIRST_SERVE_MINUTES + 2 * MATCH_MINUTES
+  const blockAt = (index: number) =>
+    slots.find(
+      (s) => s.startMinutes === FIRST_SERVE_MINUTES + index * MATCH_MINUTES
     );
-    expect(block).toBeDefined();
-    const lines = block!.matches
-      .filter((a) => a.match.round === 3)
+  // round 1 = Red-Green, round 2 = Red-Yellow.
+  const linesFor = (index: number, round: number) =>
+    blockAt(index)!
+      .matches.filter((a) => a.match.round === round)
       .map((a) => lineById.get(a.match.line_id)!.sort_order)
       .sort((x, y) => x - y);
-    expect(lines).toEqual([1, 2, 3, 5]);
+
+  it("opens the 9:15 block with Red-Green lines 4 and 5", () => {
+    expect(blockAt(0)).toBeDefined();
+    expect(linesFor(0, 1)).toEqual(expect.arrayContaining([4, 5]));
+  });
+
+  it("honours every player's earliest-start window", () => {
+    // The earliest minute-after-midnight each restricted player may start.
+    const earliest: Record<string, number> = {
+      "Willy Su": 10 * 60,
+      "Yu Cheng": 10 * 60,
+      "Peichun Su": 10 * 60,
+      "Ben Chen": 10 * 60,
+      "鄧之彬": 10 * 60 + 35,
+      "Vincent Tseng": 9 * 60 + 20,
+    };
+    for (const s of slots) {
+      for (const { match } of s.matches) {
+        for (const p of [match.pair_a, match.pair_b]) {
+          if (!p) continue;
+          for (const name of p.split(" / ").map((n) => n.trim())) {
+            if (name in earliest) {
+              expect(s.startMinutes).toBeGreaterThanOrEqual(earliest[name]);
+            }
+          }
+        }
+      }
+    }
   });
 
   it("never has a pair on two courts at once, and courts are distinct", () => {
