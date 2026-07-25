@@ -194,26 +194,23 @@ const key = (round: number, sortOrder: number): ScheduleKey => ({ round, sortOrd
  *   鄧之彬 (Green L2)     — not before 10:35 → block 2 at the earliest.
  *   Vincent Tseng (Yellow L2) — not before 9:20 → block 1 (9:55) at the earliest.
  *
- * Line 1 carries BOTH Willy (Red) and Yu Cheng (Yellow), so all three of its
- * ties must start ≥10:00. Three matches that each need their own slot, all after
- * 10:00, force three late slots (10:35 / 11:15 / 11:55) — hence the fifth block
- * and a day that ends at 12:35. The two early blocks are filled as much as those
- * windows allow (Line 1 can't play early at all, so one early court stays idle),
- * and Red-Green lines 4,5 still open the day at 9:15 as requested. Every match
- * plays exactly once and no pair is ever on two courts at once (checked in tests).
- * (Rounds: 1 = Red-Green, 2 = Red-Yellow, 3 = Green-Yellow.)
+ * Line 1 carries BOTH Willy (Red) and Yu Cheng (Yellow). Willy waived his 10:00
+ * window for the Red-Green Line 1 tie, so it plays the 9:55 block; his other tie
+ * (Red-Yellow Line 1) and both of Yu Cheng's still start ≥10:00. That waiver lets
+ * the day pack back into four full blocks (9:15–11:55) — every court busy every
+ * block, no fifth block. Red-Green lines 4,5 still open the day at 9:15. Every
+ * match plays exactly once and no pair is ever on two courts at once (checked in
+ * tests). (Rounds: 1 = Red-Green, 2 = Red-Yellow, 3 = Green-Yellow.)
  */
 export const EVENT_SCHEDULE: ScheduleKey[][] = [
   // Block 0 (9:15) — RY 3,6 + RG 4,5,7,8  (no restricted player plays this early)
   [key(2, 3), key(1, 4), key(1, 5), key(2, 6), key(1, 7), key(1, 8)],
-  // Block 1 (9:55) — RY 2,4,5,7,8  (Vincent's RY L2 is allowed from 9:20; court 6 idle)
-  [key(2, 2), key(2, 4), key(2, 5), key(2, 7), key(2, 8)],
+  // Block 1 (9:55) — RG 1 (Willy waived his 10:00 window) + RY 2,4,5,7,8
+  [key(1, 1), key(2, 2), key(2, 4), key(2, 5), key(2, 7), key(2, 8)],
   // Block 2 (10:35) — RY 1 + RG 2,3,6 + GY 4,7
   [key(2, 1), key(1, 2), key(1, 3), key(3, 4), key(1, 6), key(3, 7)],
   // Block 3 (11:15) — GY 1,2,3,5,6,8
   [key(3, 1), key(3, 2), key(3, 3), key(3, 5), key(3, 6), key(3, 8)],
-  // Block 4 (11:55) — RG 1, the last of Line 1's three ≥10:00 slots
-  [key(1, 1)],
 ];
 
 /**

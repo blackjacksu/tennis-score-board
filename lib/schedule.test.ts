@@ -164,7 +164,7 @@ describe("eventTimetable (manual event schedule)", () => {
   it("honours every player's earliest-start window", () => {
     // The earliest minute-after-midnight each restricted player may start.
     const earliest: Record<string, number> = {
-      "Willy Su": 10 * 60,
+      "Willy Su": 9 * 60 + 55, // waived his 10:00 window for the Red-Green L1 tie
       "Yu Cheng": 10 * 60,
       "Peichun Su": 10 * 60,
       "Ben Chen": 10 * 60,
