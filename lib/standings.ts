@@ -13,7 +13,12 @@ export type StandingRow = {
   gamesWon: number;
   played: number; // completed matches this team has appeared in
   tiesWon: number; // head-to-head rounds won outright (e.g. beating a team 5-3)
+  tiesLost: number; // rounds lost outright
+  tiesDrawn: number; // rounds that ended level (e.g. 4-4), a draw for both teams
 };
+
+/** A team's win–loss–tie record over the completed rounds it has played. */
+export type TieRecord = { won: number; lost: number; drawn: number };
 
 /**
  * Head-to-head ties won, keyed by team id. Each round is one tie between two
@@ -56,10 +61,61 @@ export function computeTieWins(matches: Match[]): Map<number, number> {
   return tiesWon;
 }
 
+/**
+ * Each team's win–loss–tie record across the completed rounds it has played.
+ * A round is won by whoever takes more of its line matches; an equal split
+ * (e.g. 4-4) is a draw and counts as a tie for BOTH teams — so a drawn round
+ * is visible rather than vanishing. Same round/two-team guards as computeTieWins.
+ */
+export function computeTieRecords(matches: Match[]): Map<number, TieRecord> {
+  const byRound = new Map<number, Match[]>();
+  for (const m of matches) {
+    const list = byRound.get(m.round);
+    if (list) list.push(m);
+    else byRound.set(m.round, [m]);
+  }
+
+  const records = new Map<number, TieRecord>();
+  const bump = (id: number, key: keyof TieRecord) => {
+    const r = records.get(id) ?? { won: 0, lost: 0, drawn: 0 };
+    r[key] += 1;
+    records.set(id, r);
+  };
+
+  for (const list of byRound.values()) {
+    if (!list.every((m) => m.status === "completed")) continue;
+
+    const teamIds = [...new Set(list.flatMap((m) => [m.team_a_id, m.team_b_id]))];
+    if (teamIds.length !== 2) continue; // not a straight two-team tie
+
+    const [x, y] = teamIds;
+    let xWins = 0;
+    let yWins = 0;
+    for (const m of list) {
+      if (m.score_a === m.score_b) continue; // drawn line, counts for neither
+      const winner = m.score_a > m.score_b ? m.team_a_id : m.team_b_id;
+      if (winner === x) xWins += 1;
+      else if (winner === y) yWins += 1;
+    }
+
+    if (xWins === yWins) {
+      bump(x, "drawn");
+      bump(y, "drawn");
+    } else if (xWins > yWins) {
+      bump(x, "won");
+      bump(y, "lost");
+    } else {
+      bump(y, "won");
+      bump(x, "lost");
+    }
+  }
+  return records;
+}
+
 /** Per-team matches won and games won. Games count once a match has started;
  *  matches won and "played" count only completed matches. */
 export function computeStandings(teams: Team[], matches: Match[]): StandingRow[] {
-  const tieWins = computeTieWins(matches);
+  const tieRecords = computeTieRecords(matches);
   return teams.map((team) => {
     let matchesWon = 0;
     let gamesWon = 0;
@@ -76,12 +132,15 @@ export function computeStandings(teams: Team[], matches: Match[]): StandingRow[]
         if (own > opp) matchesWon += 1;
       }
     }
+    const rec = tieRecords.get(team.id) ?? { won: 0, lost: 0, drawn: 0 };
     return {
       team,
       matchesWon,
       gamesWon,
       played,
-      tiesWon: tieWins.get(team.id) ?? 0,
+      tiesWon: rec.won,
+      tiesLost: rec.lost,
+      tiesDrawn: rec.drawn,
     };
   });
 }

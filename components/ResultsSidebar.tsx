@@ -60,7 +60,12 @@ export default function ResultsSidebar({
                   {t("gamesWon")} {row.gamesWon}
                 </div>
               </div>
-              <Stat value={row.tiesWon} label={t("tiesWon")} />
+              <TieRecordStat
+                won={row.tiesWon}
+                lost={row.tiesLost}
+                drawn={row.tiesDrawn}
+                label={t("tieRecord")}
+              />
               <Stat value={row.matchesWon} label={t("matchesWon")} />
             </li>
           );
@@ -87,11 +92,40 @@ export default function ResultsSidebar({
   );
 }
 
-// One numeric column on a team card (ties won, matches won).
+// One numeric column on a team card (matches won).
 function Stat({ value, label }: { value: number; label: string }) {
   return (
     <div className="shrink-0 text-right">
       <div className="text-2xl font-bold leading-none tabular-nums">{value}</div>
+      <div className="text-[10px] uppercase tracking-wide text-slate-400">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+// The team's tie record: rounds won–lost–drawn. A 4-4 round shows as a draw,
+// so a tied round is visible instead of counting for nobody.
+function TieRecordStat({
+  won,
+  lost,
+  drawn,
+  label,
+}: {
+  won: number;
+  lost: number;
+  drawn: number;
+  label: string;
+}) {
+  return (
+    <div className="shrink-0 text-right">
+      <div className="text-base font-bold leading-none tabular-nums">
+        {won}
+        <span className="text-slate-300">-</span>
+        {lost}
+        <span className="text-slate-300">-</span>
+        {drawn}
+      </div>
       <div className="text-[10px] uppercase tracking-wide text-slate-400">
         {label}
       </div>

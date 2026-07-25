@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   computeStandings,
+  computeTieRecords,
   computeTieWins,
   rankStandings,
   tournamentOutcome,
@@ -282,5 +283,41 @@ describe("head-to-head ties won", () => {
       mk({ id: 2, round: 9, team_a_id: RED, team_b_id: YELLOW, score_a: 6, score_b: 4 }),
     ];
     expect(computeTieWins(odd).size).toBe(0);
+  });
+
+  // ── Win–Loss–Tie record (the tie column) ──
+  it("records a decisive round as a win for one side and a loss for the other", () => {
+    const rec = computeTieRecords(round(1, RED, GREEN, 4)); // Red 4-2 Green
+    expect(rec.get(RED)).toEqual({ won: 1, lost: 0, drawn: 0 });
+    expect(rec.get(GREEN)).toEqual({ won: 0, lost: 1, drawn: 0 });
+  });
+
+  it("records a level round (4-4) as a DRAW for BOTH teams", () => {
+    const rec = computeTieRecords(round(1, RED, GREEN, 3)); // 3-3 of 6 lines = level
+    expect(rec.get(RED)).toEqual({ won: 0, lost: 0, drawn: 1 });
+    expect(rec.get(GREEN)).toEqual({ won: 0, lost: 0, drawn: 1 });
+  });
+
+  it("builds a full W-L-T record across the round-robin", () => {
+    // R1 Red 4-2 Green; R2 Red 3-3 Yellow (draw); R3 Green 5-1 Yellow.
+    const rows = computeStandings(teams, [
+      ...round(1, RED, GREEN, 4),
+      ...round(2, RED, YELLOW, 3),
+      ...round(3, GREEN, YELLOW, 5),
+    ]);
+    const byName = new Map(rows.map((r) => [r.team.name, r]));
+    // Red: beat Green, drew Yellow → 1-0-1
+    expect(byName.get("Red")).toMatchObject({ tiesWon: 1, tiesLost: 0, tiesDrawn: 1 });
+    // Green: lost to Red, beat Yellow → 1-1-0
+    expect(byName.get("Green")).toMatchObject({ tiesWon: 1, tiesLost: 1, tiesDrawn: 0 });
+    // Yellow: drew Red, lost to Green → 0-1-1
+    expect(byName.get("Yellow")).toMatchObject({ tiesWon: 0, tiesLost: 1, tiesDrawn: 1 });
+  });
+
+  it("counts only finished rounds in the record", () => {
+    const rows = computeStandings(teams, round(1, RED, GREEN, 4, 6, "in_progress"));
+    const byName = new Map(rows.map((r) => [r.team.name, r]));
+    expect(byName.get("Red")).toMatchObject({ tiesWon: 0, tiesLost: 0, tiesDrawn: 0 });
+    expect(byName.get("Green")).toMatchObject({ tiesWon: 0, tiesLost: 0, tiesDrawn: 0 });
   });
 });
