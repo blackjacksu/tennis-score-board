@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import { demoLines, demoMatches } from "./demoData";
 import {
   ANCHOR_TEAM_ID,
+  EVENT_SCHEDULE,
   FIRST_SERVE_MINUTES,
   MATCH_MINUTES,
   PARALLEL_MATCHES,
+  applyManualSchedule,
   buildTimetable,
+  eventTimetable,
   formatClock,
 } from "./schedule";
 import type { Line, Match } from "./types";
@@ -129,5 +132,48 @@ describe("buildTimetable (fallback)", () => {
 
   it("handles an empty fixture list", () => {
     expect(buildTimetable([], new Map<number, Line>())).toEqual([]);
+  });
+});
+
+describe("eventTimetable (manual event schedule)", () => {
+  const slots = eventTimetable(demoMatches, lineById);
+  const flat = slots.flatMap((s) => s.matches);
+
+  it("places every match exactly once", () => {
+    const ids = flat.map((a) => a.match.id);
+    expect(ids).toHaveLength(demoMatches.length);
+    expect(new Set(ids).size).toBe(demoMatches.length);
+  });
+
+  it("runs the four requested Green-Yellow lines (1,2,3,5) in the 10:35 block", () => {
+    const block = slots.find(
+      (s) => s.startMinutes === FIRST_SERVE_MINUTES + 2 * MATCH_MINUTES
+    );
+    expect(block).toBeDefined();
+    const lines = block!.matches
+      .filter((a) => a.match.round === 3)
+      .map((a) => lineById.get(a.match.line_id)!.sort_order)
+      .sort((x, y) => x - y);
+    expect(lines).toEqual([1, 2, 3, 5]);
+  });
+
+  it("never has a pair on two courts at once, and courts are distinct", () => {
+    for (const s of slots) {
+      const playing: string[] = [];
+      for (const { match } of s.matches)
+        for (const p of [match.pair_a, match.pair_b])
+          if (p) playing.push(...p.split(" / ").map((n) => n.trim()));
+      expect(new Set(playing).size).toBe(playing.length);
+      const courts = s.matches.map((a) => a.court);
+      expect(new Set(courts).size).toBe(courts.length);
+    }
+  });
+
+  it("falls back to the algorithm for a fixture the manual schedule can't cover", () => {
+    const onlyRound1 = demoMatches.filter((m) => m.round === 1);
+    expect(applyManualSchedule(onlyRound1, lineById, EVENT_SCHEDULE)).toBeNull();
+    // eventTimetable still schedules it (via buildTimetable's fallback).
+    const scheduled = eventTimetable(onlyRound1, lineById).flatMap((s) => s.matches);
+    expect(scheduled).toHaveLength(onlyRound1.length);
   });
 });

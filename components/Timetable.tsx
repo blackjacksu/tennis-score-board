@@ -1,7 +1,7 @@
 "use client";
 
 import { useI18n } from "@/lib/i18n";
-import { PARALLEL_MATCHES, buildTimetable, formatClock } from "@/lib/schedule";
+import { PARALLEL_MATCHES, eventTimetable, formatClock } from "@/lib/schedule";
 import type { Line, Match, Team } from "@/lib/types";
 
 /**
@@ -18,7 +18,7 @@ export default function Timetable({
   lineById: Map<number, Line>;
 }) {
   const { t, teamName } = useI18n();
-  const slots = buildTimetable(matches, lineById);
+  const slots = eventTimetable(matches, lineById);
   if (slots.length === 0) return null;
 
   const day = t("eventDay");

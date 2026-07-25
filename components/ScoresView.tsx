@@ -1,6 +1,6 @@
 "use client";
 
-import { PARALLEL_MATCHES, buildTimetable } from "@/lib/schedule";
+import { PARALLEL_MATCHES, eventTimetable } from "@/lib/schedule";
 import type { Line, Match, Team } from "@/lib/types";
 import MatchCard from "./MatchCard";
 import ResultsSidebar from "./ResultsSidebar";
@@ -20,7 +20,7 @@ export default function ScoresView({
 }) {
   // Matches laid out in play order: each time block, in court order — so a
   // spectator reads the board top-to-bottom the way the day actually runs.
-  const slots = buildTimetable(matches, lineById);
+  const slots = eventTimetable(matches, lineById);
 
   return (
     <div className="flex flex-col gap-6">

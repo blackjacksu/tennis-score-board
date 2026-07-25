@@ -15,7 +15,7 @@ import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { demoRoster, demoTeams, demoLines, demoMatches } from "../../lib/demoData.ts";
-import { buildTimetable, formatClock } from "../../lib/schedule.ts";
+import { eventTimetable, formatClock } from "../../lib/schedule.ts";
 import { createDoc, hex, readableText, pageDrawer } from "./pdfKit.mjs";
 import { EVENT_NAME, EVENT_DATE } from "./config.mjs";
 
@@ -56,7 +56,7 @@ const startByMatch = new Map();
 const courtByMatch = new Map();
 const orderByMatch = new Map();
 let playOrder = 0;
-for (const slot of buildTimetable(demoMatches, lineById)) {
+for (const slot of eventTimetable(demoMatches, lineById)) {
   for (const { match, court } of slot.matches) {
     startByMatch.set(match.id, slot.startMinutes);
     courtByMatch.set(match.id, court);

@@ -19,7 +19,7 @@ import {
   firstFreeCourt,
   parseCourtInput,
 } from "@/lib/court";
-import { PARALLEL_MATCHES, buildTimetable } from "@/lib/schedule";
+import { PARALLEL_MATCHES, eventTimetable } from "@/lib/schedule";
 import TimeBlockHeader from "@/components/TimeBlockHeader";
 import type { Line, Match, MatchStatus, Team } from "@/lib/types";
 import { useTournamentData } from "@/lib/useTournamentData";
@@ -71,7 +71,7 @@ export default function AdminBoard() {
   // order matches are actually played. Each match also carries its planned court
   // (matching the printed poster); starting a match pre-fills it, and the admin
   // can still override when a court frees up early.
-  const timetable = buildTimetable(rows, lineById);
+  const timetable = eventTimetable(rows, lineById);
 
   // Which live match holds each court, so a card can warn when two matches are
   // sent to the same place (the court map can only show one of them) and so

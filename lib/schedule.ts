@@ -173,6 +173,81 @@ export function buildTimetable(
   return slots;
 }
 
+// ─────────────────────────── Manual schedule ───────────────────────────
+// The anchor algorithm packs the day tightly, but the organisers sometimes ask
+// for specific matches at specific times. A manual schedule overrides the
+// algorithm for the canonical fixture; anything else still falls back to it.
+
+/** One match in a manual schedule, keyed by round + the line's sort order —
+ *  stable identifiers that survive a roster change (the pairs can move, the
+ *  round/line grid does not). */
+export type ScheduleKey = { round: number; sortOrder: number };
+const key = (round: number, sortOrder: number): ScheduleKey => ({ round, sortOrder });
+
+/**
+ * Hand-set running order for the 2026 event. Each inner array is one block, in
+ * court order (court 1 … N). Organiser requests baked in: the top Green-Yellow
+ * matches (lines 1,2,3,5) all play the 10:35 block, and Red-Green closes the day.
+ * Every match still plays exactly once and no pair is ever on two courts at once.
+ */
+export const EVENT_SCHEDULE: ScheduleKey[][] = [
+  // Block 0 — Red vs Yellow
+  [key(2, 4), key(2, 6), key(2, 7), key(2, 8), key(2, 1), key(2, 2)],
+  // Block 1 — Red vs Yellow (3,5) + Green vs Yellow (4,6,7,8)
+  [key(2, 3), key(2, 5), key(3, 4), key(3, 6), key(3, 7), key(3, 8)],
+  // Block 2 — Green vs Yellow (1,2,3,5) + Red vs Green (4,6)
+  [key(3, 1), key(3, 2), key(3, 3), key(3, 5), key(1, 4), key(1, 6)],
+  // Block 3 — Red vs Green (1,2,3,5,7,8)
+  [key(1, 1), key(1, 2), key(1, 3), key(1, 5), key(1, 7), key(1, 8)],
+];
+
+/**
+ * Build slots from a manual schedule. Returns null (so the caller falls back to
+ * the algorithm) unless the schedule references every match exactly once — which
+ * keeps a non-canonical fixture, or a stale schedule, from silently dropping
+ * matches.
+ */
+export function applyManualSchedule(
+  matches: Match[],
+  lineById: Map<number, Line>,
+  schedule: ScheduleKey[][]
+): TimetableSlot[] | null {
+  const byKey = new Map<string, Match>();
+  for (const m of matches) {
+    const so = lineById.get(m.line_id)?.sort_order;
+    if (so == null) return null;
+    byKey.set(`${m.round}-${so}`, m);
+  }
+  const flat = schedule.flat();
+  if (flat.length !== matches.length) return null; // must place them all, once
+  const seen = new Set<string>();
+  for (const k of flat) {
+    const id = `${k.round}-${k.sortOrder}`;
+    if (!byKey.has(id) || seen.has(id)) return null;
+    seen.add(id);
+  }
+  return schedule.map((block, index) =>
+    makeSlot(
+      index,
+      block.map((k) => byKey.get(`${k.round}-${k.sortOrder}`)!)
+    )
+  );
+}
+
+/**
+ * The schedule the app, admin board and poster all use: the hand-set
+ * EVENT_SCHEDULE for the real fixture, otherwise the anchor algorithm.
+ */
+export function eventTimetable(
+  matches: Match[],
+  lineById: Map<number, Line>
+): TimetableSlot[] {
+  return (
+    applyManualSchedule(matches, lineById, EVENT_SCHEDULE) ??
+    buildTimetable(matches, lineById)
+  );
+}
+
 /** Move up to `limit` conflict-free matches from `stream` into `block`. */
 function takeN(
   stream: Match[],
