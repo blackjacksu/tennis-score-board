@@ -22,7 +22,7 @@ import { COURT_NUMBERS } from "./court.ts";
 import type { Line, Match } from "./types";
 
 /** Minutes allotted to a single match. */
-export const MATCH_MINUTES = 45;
+export const MATCH_MINUTES = 40;
 
 /** How many matches can be on court at once — one per physical court. */
 export const PARALLEL_MATCHES = COURT_NUMBERS.length;
