@@ -15,11 +15,14 @@ export default function MatchCard({
   teamA,
   teamB,
   line,
+  plannedCourt = null,
 }: {
   match: Match;
   teamA: Team | undefined;
   teamB: Team | undefined;
   line: Line | undefined;
+  /** Court from the timetable, shown (muted) before the match is on court. */
+  plannedCourt?: number | null;
 }) {
   const { t, teamName } = useI18n();
 
@@ -33,14 +36,17 @@ export default function MatchCard({
   const aWon = match.status === "completed" && match.score_a > match.score_b;
   const bWon = match.status === "completed" && match.score_b > match.score_a;
 
-  const court = courtNumber(match.court);
+  // A live match owns its court (dark bar). A not-yet-started match shows its
+  // planned court muted, so the time-ordered board still reads court-by-court.
+  const liveCourt = courtNumber(match.court);
+  const court = liveCourt ?? plannedCourt;
 
   return (
     <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
       {/* Top bar: which court this match is on, at a glance. */}
       <div
         className={`flex items-center justify-between gap-2 border-b px-3 py-1.5 ${
-          court != null
+          liveCourt != null
             ? "border-slate-800 bg-slate-800 text-white"
             : "border-slate-200 bg-slate-50 text-slate-400"
         }`}

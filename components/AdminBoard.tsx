@@ -19,7 +19,8 @@ import {
   firstFreeCourt,
   parseCourtInput,
 } from "@/lib/court";
-import { buildTimetable } from "@/lib/schedule";
+import { PARALLEL_MATCHES, buildTimetable } from "@/lib/schedule";
+import TimeBlockHeader from "@/components/TimeBlockHeader";
 import type { Line, Match, MatchStatus, Team } from "@/lib/types";
 import { useTournamentData } from "@/lib/useTournamentData";
 
@@ -29,7 +30,7 @@ import { useTournamentData } from "@/lib/useTournamentData";
 const SAVE_DEBOUNCE_MS = 450;
 
 export default function AdminBoard() {
-  const { t, teamName } = useI18n();
+  const { t } = useI18n();
   const { matches, teamById, lineById, loading } = useTournamentData();
 
   // Demo mode has no database, so the board holds the admin's edits in memory
@@ -65,15 +66,12 @@ export default function AdminBoard() {
       })
     : matches;
 
-  const rounds = [...new Set(rows.map((m) => m.round))].sort((a, b) => a - b);
-
-  // The court each match is planned for, from the shared timetable. Starting a
-  // match pre-fills this so the board's courts match the printed poster; the
-  // admin can still override when a court frees up early.
-  const plannedCourt = new Map<number, number>();
-  for (const slot of buildTimetable(rows, lineById)) {
-    for (const { match, court } of slot.matches) plannedCourt.set(match.id, court);
-  }
+  // The whole event laid out on the clock. The board is grouped into these time
+  // blocks and ordered court-by-court within each, so staff report scores in the
+  // order matches are actually played. Each match also carries its planned court
+  // (matching the printed poster); starting a match pre-fills it, and the admin
+  // can still override when a court frees up early.
+  const timetable = buildTimetable(rows, lineById);
 
   // Which live match holds each court, so a card can warn when two matches are
   // sent to the same place (the court map can only show one of them) and so
@@ -110,45 +108,29 @@ export default function AdminBoard() {
       )}
 
       <div className="space-y-6">
-        {rounds.map((round) => {
-          const roundMatches = rows
-            .filter((m) => m.round === round)
-            .sort(
-              (a, b) =>
-                (lineById.get(a.line_id)?.sort_order ?? 0) -
-                (lineById.get(b.line_id)?.sort_order ?? 0)
-            );
-          const first = roundMatches[0];
-          const tieLabel = first
-            ? `${teamName(teamById.get(first.team_a_id))} ${t("vs")} ${teamName(
-                teamById.get(first.team_b_id)
-              )}`
-            : "";
-          return (
-            <section key={round}>
-              <h2 className="mb-2 flex items-baseline gap-2 px-1">
-                <span className="text-sm font-bold uppercase tracking-wide text-slate-500">
-                  {t("round", { n: round })}
-                </span>
-                <span className="text-base font-bold">{tieLabel}</span>
-              </h2>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {roundMatches.map((m) => (
-                  <AdminMatchCard
-                    key={m.id}
-                    match={m}
-                    teamA={teamById.get(m.team_a_id)}
-                    teamB={teamById.get(m.team_b_id)}
-                    line={lineById.get(m.line_id)}
-                    courtOwner={courtOwner}
-                    plannedCourt={plannedCourt.get(m.id) ?? null}
-                    onDemoEdit={applyDemoEdit}
-                  />
-                ))}
-              </div>
-            </section>
-          );
-        })}
+        {timetable.map((slot) => (
+          <section key={slot.index}>
+            <TimeBlockHeader
+              startMinutes={slot.startMinutes}
+              endMinutes={slot.endMinutes}
+              full={slot.matches.length === PARALLEL_MATCHES}
+            />
+            <div className="grid gap-3 sm:grid-cols-2">
+              {slot.matches.map(({ match, court }) => (
+                <AdminMatchCard
+                  key={match.id}
+                  match={match}
+                  teamA={teamById.get(match.team_a_id)}
+                  teamB={teamById.get(match.team_b_id)}
+                  line={lineById.get(match.line_id)}
+                  courtOwner={courtOwner}
+                  plannedCourt={court}
+                  onDemoEdit={applyDemoEdit}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
       </div>
     </main>
   );
