@@ -15,6 +15,8 @@ Live-score website for a 3-team doubles tournament (Team A / B / C, 8 doubles li
 2. In the dashboard, open **SQL Editor → New query**:
    - paste and run `supabase/schema.sql`
    - then paste and run `supabase/seed.sql` (3 teams, 8 lines, 24 matches — edit names/labels to taste)
+   - and, for the extra tabs: `supabase/matchmaking.sql` (**Find a Game**) and
+     `supabase/gallery.sql` (**Gallery**) — both described below
 3. Open **Project Settings → API** and copy:
    - Project URL
    - `anon` public key
@@ -34,8 +36,9 @@ Open http://localhost:3000 (viewer) and http://localhost:3000/admin (admin, ente
 
 1. Push this repo to GitHub.
 2. On [vercel.com](https://vercel.com), **Add New → Project**, import the repo (defaults are fine).
-3. Under **Environment Variables**, add the four values from `.env.local.example`:
-   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_PIN`
+3. Under **Environment Variables**, add the values from `.env.local.example`:
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_PIN`,
+   and optionally `ANTHROPIC_API_KEY` for the Find a Game tab
 4. Deploy. Your site is live at `https://<project>.vercel.app`.
 5. Visit `/qr` on the deployed site and print the page — one QR for spectators, one for staff.
 
@@ -44,6 +47,58 @@ Open http://localhost:3000 (viewer) and http://localhost:3000/admin (admin, ente
 - The browser reads scores with the public `anon` key; Row Level Security makes that key **read-only**.
 - Score updates go through a Next.js server action that checks the admin cookie (set after PIN login) and writes with the secret `service_role` key.
 - Viewers hold a Supabase Realtime (WebSocket) subscription on the `matches` table, so every phone updates the moment a score is saved — no refresh needed.
+
+## Find a Game (matchmaking tab)
+
+A fourth tab on the viewer board where players post a pickup game in plain
+language — *"anyone want to play doubles Thursday 6-8pm in Boston? I'm 3.5"* —
+and get matched with everyone whose request fits.
+
+- **Setup:** run `supabase/matchmaking.sql`, and set `ANTHROPIC_API_KEY`.
+- **Parsing:** a server action sends the text to Claude with a JSON schema and
+  gets back day, time window, town, format, and NTRP. Without an API key it
+  falls back to a keyword parser in `lib/matchmaking.ts` — less accurate, still
+  usable, and the tab works either way.
+- **Matching:** pure functions in `lib/matchmaking.ts`, covered by
+  `lib/matchmaking.test.ts`. A missing field means "flexible" and matches
+  anything; a *conflicting* field (different town, different day, singles vs
+  doubles, no overlapping hours on a shared day) excludes the pair outright
+  rather than ranking it low.
+- **Handing off to Messenger / Instagram / WhatsApp / SMS:** the app opens the
+  right thread in the player's own app with the introduction written, and they
+  press send. It does **not** send on their behalf — Meta and the carriers all
+  prohibit business-initiated messages to people who haven't opted in, which
+  would need Business verification and App Review. WhatsApp and SMS accept
+  prefilled text; Instagram and Messenger only accept a destination, so those
+  get a copy button. `lib/relay.ts` is the seam where a server-side send would
+  slot in if you ever get those approvals.
+- Contact handles posted here are **public on the board** — the composer says so.
+
+## Gallery
+
+A fifth tab showing photos from the event. **Read-only for everyone.** Staff
+add and remove photos from the admin board at `/admin/photos`, reached from the
+score-reporting page.
+
+- **Setup:** run `supabase/gallery.sql`. It creates the public `event-photos`
+  Storage bucket *and* the `event_photos` metadata table — no extra env vars.
+- **Staff-only writes**, gated on the same admin PIN session as score
+  reporting. Enforced in two places that both have to hold: the `/admin/photos`
+  route redirects to the PIN form, and every server action in
+  `app/gallery/actions.ts` re-checks `isAdmin()` before doing anything. The
+  route guard is the convenience; the action check is the control.
+- **Uploads bypass the app server.** A Next.js server action body is capped far
+  below a phone photo, so the server mints a single-use signed upload URL and
+  the browser PUTs the file straight to Storage, then records the row. The anon
+  key never needs write access to the bucket, and the signed token is scoped to
+  one object — a leaked ticket can write that path and nothing else.
+- **Photos are downscaled in the browser** to 1600px on the long edge before
+  they're sent — a 5.5 MB phone photo lands at roughly 25 KB, which is the
+  difference between an upload that finishes on venue wifi and one that
+  doesn't. Going through a canvas also strips EXIF, including GPS.
+- The bucket is **public**: any photo URL works for anyone who has it. That's
+  what makes thumbnails load without signing every one, and it's the tradeoff
+  to know about before pointing a QR code at this tab.
 
 ## Tournament structure
 

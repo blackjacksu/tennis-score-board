@@ -5,10 +5,15 @@ import { useI18n } from "@/lib/i18n";
 import { isDemoMode, isSupabaseConfigured } from "@/lib/supabase";
 import { useTournamentData } from "@/lib/useTournamentData";
 import CourtView from "./CourtView";
+import GalleryView from "./GalleryView";
+import PlayView from "./PlayView";
 import ScoresView from "./ScoresView";
 import TeamsView from "./TeamsView";
 
-type View = "scores" | "courts" | "roster";
+type View = "scores" | "courts" | "roster" | "play" | "gallery";
+
+/** Views that stand alone — usable before the draw exists. */
+const STANDALONE: View[] = ["play", "gallery"];
 
 export default function ScoreBoard() {
   const { t } = useI18n();
@@ -26,9 +31,9 @@ export default function ScoreBoard() {
   if (loading) {
     return <p className="p-8 text-center text-slate-400">{t("loading")}</p>;
   }
-  if (matches.length === 0) {
-    return <p className="p-8 text-center text-slate-400">{t("noMatches")}</p>;
-  }
+  // An empty draw only blanks the tournament views — Find a Game and Gallery
+  // stand alone and are usable before any match exists.
+  const noMatches = matches.length === 0 && !STANDALONE.includes(view);
 
   return (
     <div className="space-y-4">
@@ -41,7 +46,12 @@ export default function ScoreBoard() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
         <ViewSwitcher view={view} onChange={setView} />
         <div className="min-w-0 flex-1">
-          {view === "scores" && (
+          {noMatches && (
+            <p className="p-8 text-center text-slate-400">{t("noMatches")}</p>
+          )}
+          {view === "play" && <PlayView />}
+          {view === "gallery" && <GalleryView />}
+          {!noMatches && view === "scores" && (
             <ScoresView
               teams={teams}
               matches={matches}
@@ -49,7 +59,7 @@ export default function ScoreBoard() {
               lineById={lineById}
             />
           )}
-          {view === "courts" && (
+          {!noMatches && view === "courts" && (
             <CourtView
               teams={teams}
               matches={matches}
@@ -57,7 +67,7 @@ export default function ScoreBoard() {
               lineById={lineById}
             />
           )}
-          {view === "roster" && (
+          {!noMatches && view === "roster" && (
             <TeamsView
               teams={teams}
               matches={matches}
@@ -85,6 +95,8 @@ function ViewSwitcher({
     { key: "scores", label: t("liveScores"), icon: "📋" },
     { key: "courts", label: t("courtMap"), icon: "🎾" },
     { key: "roster", label: t("roster"), icon: "👥" },
+    { key: "play", label: t("findGame"), icon: "🤝" },
+    { key: "gallery", label: t("gallery"), icon: "📸" },
   ];
 
   return (

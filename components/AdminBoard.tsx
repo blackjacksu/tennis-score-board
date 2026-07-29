@@ -87,9 +87,14 @@ export default function AdminBoard() {
     <main className="mx-auto max-w-5xl px-4 py-5">
       <Header subtitle={t("scoreReporting")} />
       <div className="mb-4 flex items-center justify-between gap-3">
-        <Link href="/" className="text-sm text-blue-600 underline">
-          → {t("viewerBoard")}
-        </Link>
+        <div className="flex flex-wrap items-center gap-4">
+          <Link href="/" className="text-sm text-blue-600 underline">
+            → {t("viewerBoard")}
+          </Link>
+          <Link href="/admin/photos" className="text-sm text-blue-600 underline">
+            → {t("managePhotos")}
+          </Link>
+        </div>
         <ResetControl onResetDemo={resetDemoRows} />
       </div>
 

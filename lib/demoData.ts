@@ -12,6 +12,8 @@
 //   7.0, Line 5 all 6.5). Line 8 is the outlier: Red 3.0 against 4.5 apiece.
 //   吳杏玫 seeded at NTRP 2.5 and Kosho Horage at 3.5 (neither has a rating on the
 //   form); 鄧之彬 at 4.0 as registered.
+import type { EventPhoto } from "./gallery";
+import { nextWeekday, type PlayRequest } from "./matchmaking";
 import type { Line, Match, Team, TeamRoster } from "./types";
 
 export const demoTeams: Team[] = [
@@ -157,3 +159,166 @@ export const demoMatches: Match[] = ties.flatMap((tie) =>
     } satisfies Match;
   })
 );
+
+// --- Find a Game board -----------------------------------------------------
+// Sample pickup-game requests so the board has something to match against when
+// Supabase isn't connected. Dates are relative to today so they never go stale.
+
+const demoToday = (() => {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+})();
+
+const demoThursday = nextWeekday(demoToday, 4);
+const demoSaturday = nextWeekday(demoToday, 6);
+
+export const demoPlayRequests: PlayRequest[] = [
+  {
+    id: 9001,
+    author_name: "Wei-Chen Lin",
+    raw_text: "Anyone want to play doubles Thursday 6-8pm in Boston? I'm 3.5",
+    play_date: demoThursday,
+    start_minute: 18 * 60,
+    end_minute: 20 * 60,
+    city: "Boston",
+    venue: null,
+    format: "doubles",
+    ntrp: 3.5,
+    players_needed: 1,
+    contact_channel: "instagram",
+    contact_handle: "weichen.tennis",
+    status: "open",
+    client_id: "demo-9001",
+    created_at: new Date(Date.now() - 45 * 60_000).toISOString(),
+  },
+  {
+    id: 9002,
+    author_name: "Amy Chou",
+    raw_text: "Looking for a fourth Thursday evening, Boston area. 3.5-4.0",
+    play_date: demoThursday,
+    start_minute: 17 * 60,
+    end_minute: 21 * 60,
+    city: "Boston",
+    venue: null,
+    format: "doubles",
+    ntrp: 4.0,
+    players_needed: 1,
+    contact_channel: "whatsapp",
+    contact_handle: "16175550142",
+    status: "open",
+    client_id: "demo-9002",
+    created_at: new Date(Date.now() - 3 * 3600_000).toISOString(),
+  },
+  {
+    id: 9003,
+    author_name: "Daniel Ho",
+    raw_text: "Singles Saturday morning at Newton? 4.0 here",
+    play_date: demoSaturday,
+    start_minute: 8 * 60,
+    end_minute: 11 * 60,
+    city: "Newton",
+    venue: null,
+    format: "singles",
+    ntrp: 4.0,
+    players_needed: 1,
+    contact_channel: "messenger",
+    contact_handle: "daniel.ho.tennis",
+    status: "open",
+    client_id: "demo-9003",
+    created_at: new Date(Date.now() - 26 * 3600_000).toISOString(),
+  },
+  {
+    id: 9004,
+    author_name: "Priya Nair",
+    raw_text: "New to the area, happy to hit any evening in Boston. Around 3.0",
+    play_date: null,
+    start_minute: 17 * 60,
+    end_minute: 22 * 60,
+    city: "Boston",
+    venue: null,
+    format: "either",
+    ntrp: 3.0,
+    players_needed: 1,
+    contact_channel: "sms",
+    contact_handle: "16175550188",
+    status: "open",
+    client_id: "demo-9004",
+    created_at: new Date(Date.now() - 5 * 3600_000).toISOString(),
+  },
+];
+
+// --- Event gallery ---------------------------------------------------------
+// Placeholder images so the gallery grid, lightbox, and upload flow are all
+// exercisable without Supabase Storage. Inline SVG rather than real photos so
+// the repo stays text-only; publicPhotoUrl passes a data: URI straight through.
+
+function demoImage(bg: string, label: string): string {
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600">` +
+    `<rect width="800" height="600" fill="${bg}"/>` +
+    `<circle cx="400" cy="250" r="95" fill="#d9f99d" stroke="#3f6212" stroke-width="7"/>` +
+    `<path d="M312 215a95 95 0 0 0 176 70" fill="none" stroke="#3f6212" stroke-width="7"/>` +
+    `<path d="M312 285a95 95 0 0 1 176-70" fill="none" stroke="#3f6212" stroke-width="7"/>` +
+    `<text x="400" y="450" font-family="system-ui,sans-serif" font-size="40" ` +
+    `font-weight="700" fill="#ffffff" text-anchor="middle">${label}</text>` +
+    `</svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+export const demoPhotos: EventPhoto[] = [
+  {
+    id: 8001,
+    storage_path: demoImage("#0f766e", "Court 1 — Line 1 final"),
+    caption: "Line 1 tiebreak, Red vs Green",
+    uploader_name: "Amy Chou",
+    width: 800,
+    height: 600,
+    created_at: new Date(Date.now() - 20 * 60_000).toISOString(),
+  },
+  {
+    id: 8002,
+    storage_path: demoImage("#b91c1c", "Red team"),
+    caption: "Red team before the first round",
+    uploader_name: "Wei-Chen Lin",
+    width: 800,
+    height: 600,
+    created_at: new Date(Date.now() - 90 * 60_000).toISOString(),
+  },
+  {
+    id: 8003,
+    storage_path: demoImage("#15803d", "Green team"),
+    caption: null,
+    uploader_name: "Daniel Ho",
+    width: 800,
+    height: 600,
+    created_at: new Date(Date.now() - 3 * 3600_000).toISOString(),
+  },
+  {
+    id: 8004,
+    storage_path: demoImage("#a16207", "Yellow team"),
+    caption: "Yellow warming up on court 4",
+    uploader_name: "Priya Nair",
+    width: 800,
+    height: 600,
+    created_at: new Date(Date.now() - 4 * 3600_000).toISOString(),
+  },
+  {
+    id: 8005,
+    storage_path: demoImage("#1d4ed8", "Sign-in table"),
+    caption: "Registration, 8:30am",
+    uploader_name: "Amy Chou",
+    width: 800,
+    height: 600,
+    created_at: new Date(Date.now() - 6 * 3600_000).toISOString(),
+  },
+  {
+    id: 8006,
+    storage_path: demoImage("#7c3aed", "Trophy"),
+    caption: "Champions",
+    uploader_name: "Wei-Chen Lin",
+    width: 800,
+    height: 600,
+    created_at: new Date(Date.now() - 7 * 3600_000).toISOString(),
+  },
+];
